@@ -44,6 +44,18 @@ class RunnerScene extends Phaser.Scene {
         // 3. Hazard Container (Regular Array for Manual Management)
         this.activeHazards = [];
 
+        // Hotspot State
+        this.greenHotspot = null;
+        this.redHotspots = [];
+        this.greenScore = 0;
+        this.greenActive = false;
+        this.greenCircle = null;
+        this.greenActivationTween = null;
+        this.greenPulseTween = null;
+        this.greenTimer = null;
+        this.redTimer = null;
+        this.hazardSpawnCount = 0;
+
         // 4. Input
         this.cursors = this.input.keyboard.createCursorKeys();
 
@@ -62,6 +74,26 @@ class RunnerScene extends Phaser.Scene {
             this.startGame();
         });
 
+        this.scoreText = this.add.text(16, 16, "Score: 0", {
+            fontSize: "20px",
+            color: "#ffffff"
+        }).setDepth(20);
+
+        // Timers for hotspots
+        this.greenTimer = this.time.addEvent({
+            delay: 10000,
+            loop: true,
+            callback: this.spawnGreenHotspot,
+            callbackScope: this
+        });
+
+        this.redTimer = this.time.addEvent({
+            delay: 3000,
+            loop: true,
+            callback: this.spawnRedHotspot,
+            callbackScope: this
+        });
+
         // Debug Text
         this.debugText = this.add.text(10, 10, "Debug v8", { fontSize: '12px', fill: '#0f0' });
     }
@@ -70,14 +102,21 @@ class RunnerScene extends Phaser.Scene {
         this.isRunning = true;
         this.isDead = false;
         this.startText.setVisible(false);
+        this.hazardSpawnCount = 0;
 
         // Clear existing
         this.activeHazards.forEach(h => h.destroy());
         this.activeHazards = [];
 
+        // Reset hotspots
+        this.clearGreenHotspot();
+        this.clearRedHotspots();
+        this.greenScore = 0;
+        this.scoreText.setText("Score: 0");
+
         // START SPAWN LOOP
         this.spawnTimer = this.time.addEvent({
-            delay: 1000,
+            delay: 750,
             loop: true,
             callback: this.spawnHazard,
             callbackScope: this
@@ -87,7 +126,11 @@ class RunnerScene extends Phaser.Scene {
     spawnHazard() {
         if (this.isDead || !this.isRunning) return;
 
-        const laneIndex = Phaser.Math.Between(0, this.lanes.length - 1);
+        this.hazardSpawnCount += 1;
+
+        const randomLane = Phaser.Math.Between(0, this.lanes.length - 1);
+        const forcedLane = (this.currentLaneIndex + 2) % this.lanes.length;
+        const laneIndex = this.hazardSpawnCount % 4 === 0 ? forcedLane : randomLane;
         const baseY = this.lanes[laneIndex];
         const offset = Phaser.Math.Between(-18, 18);
         const y = baseY + offset;
@@ -95,7 +138,7 @@ class RunnerScene extends Phaser.Scene {
         const fromLeft = Phaser.Math.Between(0, 1) === 0;
         const spawnX = fromLeft ? -60 : this.width + 60;
         // Velocity in pixels per second
-        const velocityX = fromLeft ? 250 : -250;
+        const velocityX = fromLeft ? 420 : -420;
 
         // Create Sprite (NOT Physics Image)
         const hazard = this.add.image(spawnX, y, 'hazard_texture');
@@ -119,6 +162,9 @@ class RunnerScene extends Phaser.Scene {
 
         // 1. Player Input
         this.handleInput();
+
+        // 1.5. Grid hotspot checks
+        this.checkGridHotspots();
 
         // 2. Manual Hazard Update (Motion + Cleanup + Collision)
         // Delta is in ms, so divide by 1000 for seconds
@@ -172,6 +218,16 @@ class RunnerScene extends Phaser.Scene {
         }
     }
 
+    getGridPosition(row, col) {
+        const x = this.columns[col];
+        const y = this.lanes[row];
+        return { x, y };
+    }
+
+    isPlayerAt(row, col) {
+        return row === this.currentLaneIndex && col === this.currentColumnIndex;
+    }
+
     movePlayerToGrid() {
         const targetX = this.columns[this.currentColumnIndex];
         const targetY = this.lanes[this.currentLaneIndex];
@@ -185,12 +241,210 @@ class RunnerScene extends Phaser.Scene {
         });
     }
 
+    spawnGreenHotspot() {
+        if (this.isDead || !this.isRunning) return;
+
+        this.clearGreenHotspot();
+        this.greenActive = false;
+
+        const candidates = [];
+        for (let row = 0; row < this.lanes.length; row++) {
+            for (let col = 0; col < this.columns.length; col++) {
+                const isRed = this.redHotspots.some(h => h.row === row && h.col === col);
+                if (!isRed) {
+                    candidates.push({ row, col });
+                }
+            }
+        }
+
+        if (candidates.length === 0) {
+            return;
+        }
+
+        const choice = Phaser.Utils.Array.GetRandom(candidates);
+        this.greenHotspot = { row: choice.row, col: choice.col };
+
+        const pos = this.getGridPosition(choice.row, choice.col);
+        this.greenCircle = this.add.circle(pos.x, pos.y, 18, 0x00ff00, 0.9).setOrigin(0.5);
+        this.greenCircle.setScale(1.4);
+
+        if (this.greenActivationTween) {
+            this.greenActivationTween.stop();
+        }
+        this.greenActivationTween = this.tweens.add({
+            targets: this.greenCircle,
+            scale: 1,
+            alpha: 0.7,
+            duration: 500,
+            ease: "Sine.easeOut",
+            onComplete: () => {
+                this.greenActive = true;
+                this.greenPulseTween = this.tweens.add({
+                    targets: this.greenCircle,
+                    scale: 1.2,
+                    duration: 500,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: "Sine.easeInOut"
+                });
+            }
+        });
+    }
+
+    clearGreenHotspot() {
+        if (this.greenPulseTween) {
+            this.greenPulseTween.stop();
+            this.greenPulseTween = null;
+        }
+        if (this.greenActivationTween) {
+            this.greenActivationTween.stop();
+            this.greenActivationTween = null;
+        }
+        if (this.greenCircle) {
+            this.greenCircle.destroy();
+            this.greenCircle = null;
+        }
+        this.greenHotspot = null;
+        this.greenActive = false;
+    }
+
+    spawnRedHotspot() {
+        if (this.isDead || !this.isRunning) return;
+
+        if (this.redHotspots.length >= 3) {
+            return;
+        }
+
+        const candidates = [];
+        for (let row = 0; row < this.lanes.length; row++) {
+            for (let col = 0; col < this.columns.length; col++) {
+                const isGreen =
+                    this.greenHotspot &&
+                    this.greenHotspot.row === row &&
+                    this.greenHotspot.col === col;
+
+                const isRed = this.redHotspots.some(h => h.row === row && h.col === col);
+
+                if (!isGreen && !isRed) {
+                    candidates.push({ row, col });
+                }
+            }
+        }
+
+        if (candidates.length === 0) {
+            return;
+        }
+
+        const choice = Phaser.Utils.Array.GetRandom(candidates);
+        const pos = this.getGridPosition(choice.row, choice.col);
+
+        const redCircle = this.add.circle(pos.x, pos.y, 18, 0xff0000, 1).setOrigin(0.5);
+        redCircle.setScale(1.4);
+
+        const hotspot = {
+            row: choice.row,
+            col: choice.col,
+            circle: redCircle,
+            active: false,
+            expireEvent: null,
+            activationEvent: null,
+            pulseTween: null
+        };
+
+        hotspot.activationEvent = this.tweens.add({
+            targets: redCircle,
+            scale: 1,
+            alpha: 0.6,
+            duration: 500,
+            ease: "Sine.easeOut",
+            onComplete: () => {
+                hotspot.active = true;
+                hotspot.pulseTween = this.tweens.add({
+                    targets: redCircle,
+                    scale: 1.2,
+                    duration: 500,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: "Sine.easeInOut"
+                });
+            }
+        });
+
+        hotspot.expireEvent = this.time.delayedCall(10000, () => {
+            this.removeRedHotspot(hotspot);
+        });
+
+        this.redHotspots.push(hotspot);
+    }
+
+    clearRedHotspots() {
+        this.redHotspots.forEach(h => {
+            if (h.pulseTween) {
+                h.pulseTween.stop();
+            }
+            if (h.circle) {
+                h.circle.destroy();
+            }
+            if (h.expireEvent) {
+                h.expireEvent.remove(false);
+            }
+            if (h.activationEvent) {
+                h.activationEvent.stop();
+            }
+        });
+        this.redHotspots = [];
+    }
+
+    removeRedHotspot(hotspot) {
+        const index = this.redHotspots.indexOf(hotspot);
+        if (index !== -1) {
+            if (hotspot.pulseTween) {
+                hotspot.pulseTween.stop();
+            }
+            if (hotspot.circle) {
+                hotspot.circle.destroy();
+            }
+            if (hotspot.expireEvent) {
+                hotspot.expireEvent.remove(false);
+            }
+            if (hotspot.activationEvent) {
+                hotspot.activationEvent.stop();
+            }
+            this.redHotspots.splice(index, 1);
+        }
+    }
+
+    checkGridHotspots() {
+        if (this.isDead || !this.isRunning) return;
+
+        const row = this.currentLaneIndex;
+        const col = this.currentColumnIndex;
+
+        if (this.greenHotspot && this.greenActive && this.greenHotspot.row === row && this.greenHotspot.col === col) {
+            this.greenScore += 1;
+            this.scoreText.setText("Score: " + this.greenScore);
+            this.clearGreenHotspot();
+        }
+
+        const isOnRed = this.redHotspots.some(h => h.active && h.row === row && h.col === col);
+        if (isOnRed) {
+            this.triggerGridDeath();
+        }
+    }
+
+    triggerGridDeath() {
+        if (this.isDead) return;
+        this.handlePlayerHit();
+    }
+
     handlePlayerHit() {
         if (this.isDead) return;
         this.isDead = true;
         this.isRunning = false;
 
         if (this.spawnTimer) this.spawnTimer.remove(false);
+        if (this.greenTimer) this.greenTimer.remove(false);
+        if (this.redTimer) this.redTimer.remove(false);
 
         // Pop Animation
         this.tweens.add({
