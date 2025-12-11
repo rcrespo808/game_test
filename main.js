@@ -473,12 +473,20 @@ class RunnerScene extends Phaser.Scene {
     }
 }
 
-const config = {
-    type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    backgroundColor: "#111111",
-    scene: [RunnerScene]
-};
+// Export for testing (Node.js environment)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { RunnerScene };
+}
 
-const game = new Phaser.Game(config);
+// Initialize game in browser environment
+if (typeof window !== 'undefined' && typeof Phaser !== 'undefined') {
+    const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        backgroundColor: "#111111",
+        scene: [RunnerScene]
+    };
+
+    const game = new Phaser.Game(config);
+}
