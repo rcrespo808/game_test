@@ -53,7 +53,8 @@ const mockPhaser = {
         })),
         line: jest.fn(() => ({
           setOrigin: jest.fn().mockReturnThis(),
-          setDepth: jest.fn().mockReturnThis()
+          setDepth: jest.fn().mockReturnThis(),
+          destroy: jest.fn()
         })),
         text: jest.fn(() => ({
           setOrigin: jest.fn().mockReturnThis(),

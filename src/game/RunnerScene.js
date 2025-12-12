@@ -11,8 +11,6 @@ import { GridManager } from './grid.js';
 import { PlayerManager } from './player.js';
 import { HazardManager } from './hazards.js';
 import { HotspotManager } from './hotspots.js';
-import { EditorUI } from '../ui/editor.js';
-
 export class RunnerScene extends window.Phaser.Scene {
     constructor() {
         super({ key: 'RunnerScene' });
@@ -51,20 +49,10 @@ export class RunnerScene extends window.Phaser.Scene {
                 this.midiData = midi;
                 this.buildMIDIEvents();
                 console.log(">> MIDI loaded:", midi.name, "tracks:", midi.tracks.length);
-                
-                // Update track selector in editor UI if available
-                if (this.editorUI && typeof this.editorUI.populateTrackSelector === 'function') {
-                    this.editorUI.populateTrackSelector();
-                }
             } catch (err) {
                 console.error(">> MIDI load failed:", err);
                 this.midiData = null;
                 this.track = { events: [], nextIndex: 0 };
-                
-                // Update track selector even on error to show "Load MIDI file first"
-                if (this.editorUI && typeof this.editorUI.populateTrackSelector === 'function') {
-                    this.editorUI.populateTrackSelector();
-                }
             }
         })();
         return this.midiLoadPromise;
@@ -133,7 +121,6 @@ export class RunnerScene extends window.Phaser.Scene {
 
         // Input
         this.cursors = this.input.keyboard.createCursorKeys();
-        this.editorKey = this.input.keyboard.addKey('E');
 
         // Game State
         this.isDead = false;
@@ -194,12 +181,6 @@ export class RunnerScene extends window.Phaser.Scene {
             color: "#fff",
             fontFamily: 'Arial'
         }).setOrigin(0.5).setDepth(200).setVisible(false);
-
-        // Editor UI Setup (async - loads MIDI manifest)
-        this.editorUI = new EditorUI(this);
-        this.editorUI.setup().catch(err => {
-            console.error(">> Editor UI setup error:", err);
-        });
 
         // Debug Text
         this.debugText = this.add.text(10, 10, "Debug Modular", { fontSize: '12px', fill: '#0f0' });

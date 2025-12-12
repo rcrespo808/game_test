@@ -22,8 +22,6 @@ src/
 │   ├── player.js          # Player movement and input handling
 │   ├── hazards.js         # Hazard spawning, movement, collision
 │   └── hotspots.js        # Green/red hotspot management
-└── ui/              # User interface
-    └── editor.js          # In-game editor overlay (press 'E')
 ```
 
 ## Module Descriptions
@@ -61,12 +59,6 @@ Handles MIDI audio playback using Tone.js:
 - **hazards.js**: Hazard spawning, movement, and collision detection
 - **hotspots.js**: Green/red hotspot spawning and management
 
-### ui/editor.js
-Manages the track editor UI:
-- Form population
-- Event handlers
-- Config saving/loading
-
 ## Usage
 
 The main entry point is `main.js` which imports `MenuScene` and `RunnerScene` and initializes the Phaser game.
@@ -84,7 +76,6 @@ The game flow:
 
 - `MenuScene` depends on `midiManifest` and `gameConfig`
 - `RunnerScene` depends on all other modules (audio, midi, game systems)
-- `EditorUI` depends on `stageConfig` and `RunnerScene`
 - Game systems (player, hazards, hotspots) depend on `grid`
 - All modules use ES6 imports/exports
 

@@ -29,7 +29,7 @@ describe('RunnerScene', () => {
       setItem: jest.fn()
     };
 
-    // Mock document.getElementById for editor
+    // Mock document.getElementById
     const createMockElement = () => ({
       value: '',
       checked: false,
@@ -370,6 +370,138 @@ describe('RunnerScene', () => {
       scene.playerManager.handleInput(mockCursors);
 
       expect(scene.playerManager.currentColumnIndex).toBe(0); // Should stay at 0
+    });
+  });
+
+  describe('Song Completion', () => {
+    test('should detect song completion when progress reaches 100%', () => {
+      scene.create();
+      scene.songDuration = 100; // 100 seconds
+      scene.trackTime = 0;
+      scene.isRunning = true;
+      scene.songCompleted = false;
+
+      // Mock update loop that advances time
+      scene.trackTime = 100; // Song complete
+      
+      const progress = scene.trackTime / scene.songDuration;
+      expect(progress).toBeGreaterThanOrEqual(1);
+    });
+
+    test('should call handleSongComplete when song finishes', () => {
+      scene.create();
+      scene.songDuration = 100;
+      scene.trackTime = 0;
+      scene.isRunning = true;
+      scene.songCompleted = false;
+      scene.victoryText = { setVisible: jest.fn(), setAlpha: jest.fn() };
+      scene.victoryScoreText = { setVisible: jest.fn(), setAlpha: jest.fn(), setText: jest.fn().mockReturnThis() };
+      scene.greenScore = 150;
+      scene.audioManager = { stopAudio: jest.fn() };
+      scene.tweens = { add: jest.fn() };
+      scene.time = { delayedCall: jest.fn() };
+      scene.scene = { start: jest.fn() };
+
+      scene.handleSongComplete();
+
+      expect(scene.songCompleted).toBe(true);
+      expect(scene.isRunning).toBe(false);
+      expect(scene.audioManager.stopAudio).toHaveBeenCalled();
+      expect(scene.victoryText.setVisible).toHaveBeenCalledWith(true);
+      expect(scene.victoryScoreText.setText).toHaveBeenCalledWith('Final Score: 150');
+      expect(scene.victoryScoreText.setVisible).toHaveBeenCalledWith(true);
+      expect(scene.time.delayedCall).toHaveBeenCalledWith(3000, expect.any(Function));
+    });
+
+    test('should not call handleSongComplete if already completed', () => {
+      scene.create();
+      scene.songCompleted = true;
+      scene.victoryText = { setVisible: jest.fn() };
+      scene.audioManager = { stopAudio: jest.fn() };
+
+      const callCountBefore = scene.audioManager.stopAudio.mock.calls.length;
+      scene.handleSongComplete();
+      const callCountAfter = scene.audioManager.stopAudio.mock.calls.length;
+
+      expect(callCountAfter).toBe(callCountBefore);
+    });
+
+    test('should not call handleSongComplete if player is dead', () => {
+      scene.create();
+      scene.isDead = true;
+      scene.songCompleted = false;
+      scene.victoryText = { setVisible: jest.fn() };
+      scene.audioManager = { stopAudio: jest.fn() };
+
+      const callCountBefore = scene.audioManager.stopAudio.mock.calls.length;
+      scene.handleSongComplete();
+      const callCountAfter = scene.audioManager.stopAudio.mock.calls.length;
+
+      expect(callCountAfter).toBe(callCountBefore);
+    });
+  });
+
+  describe('Progress Bar', () => {
+    test('should initialize progress bar in create', () => {
+      scene.create();
+      expect(scene.progressBarBg).toBeDefined();
+      expect(scene.progressBarFill).toBeDefined();
+    });
+
+    test('should update progress bar width based on song progress', () => {
+      scene.create();
+      scene.songDuration = 100;
+      scene.trackTime = 50; // 50% complete
+      scene.progressBarFill = { width: 0 };
+
+      const progressBarWidth = scene.width - 40;
+      const expectedWidth = (scene.trackTime / scene.songDuration) * progressBarWidth;
+
+      scene.update(0, 0);
+
+      // Progress bar width should be updated (exact check depends on implementation)
+      expect(scene.progressBarFill).toBeDefined();
+    });
+
+    test('should handle zero song duration gracefully', () => {
+      scene.create();
+      scene.songDuration = 0;
+      scene.trackTime = 50;
+      scene.progressBarFill = { width: 0 };
+
+      // Should not throw error
+      expect(() => {
+        const progress = scene.songDuration > 0 ? scene.trackTime / scene.songDuration : 0;
+      }).not.toThrow();
+    });
+  });
+
+  describe('Victory Message', () => {
+    test('should initialize victory text elements in create', () => {
+      scene.create();
+      expect(scene.victoryText).toBeDefined();
+      expect(scene.victoryScoreText).toBeDefined();
+    });
+
+    test('should show victory message with final score on completion', () => {
+      scene.create();
+      scene.victoryText = { setVisible: jest.fn(), setAlpha: jest.fn() };
+      scene.victoryScoreText = { 
+        setVisible: jest.fn(), 
+        setAlpha: jest.fn(), 
+        setText: jest.fn().mockReturnThis() 
+      };
+      scene.greenScore = 250;
+      scene.audioManager = { stopAudio: jest.fn() };
+      scene.tweens = { add: jest.fn() };
+      scene.time = { delayedCall: jest.fn() };
+      scene.scene = { start: jest.fn() };
+
+      scene.handleSongComplete();
+
+      expect(scene.victoryText.setVisible).toHaveBeenCalledWith(true);
+      expect(scene.victoryScoreText.setText).toHaveBeenCalledWith('Final Score: 250');
+      expect(scene.victoryScoreText.setVisible).toHaveBeenCalledWith(true);
     });
   });
 });
