@@ -450,10 +450,20 @@ export class MenuScene extends window.Phaser.Scene {
         let yPos = startY;
         this.stageItems = [];
 
+        // Sort stages by difficulty order within each MIDI file group
+        const difficultyOrder = { easy: 0, normal: 1, hard: 2, extreme: 3 };
+        
         Object.entries(stagesByMidi).forEach(([midiPath, stages]) => {
             // Find MIDI file info
             const midiFile = this.midiFiles.find(f => f.path === midiPath);
             const midiName = midiFile ? midiFile.name : midiPath.split('/').pop();
+
+            // Sort stages by difficulty (easy -> normal -> hard -> extreme)
+            const sortedStages = stages.sort((a, b) => {
+                const diffA = difficultyOrder[a.difficulty] ?? 99;
+                const diffB = difficultyOrder[b.difficulty] ?? 99;
+                return diffA - diffB;
+            });
 
             // Group header
             const headerText = this.add.text(50, yPos - 10, midiName, {
@@ -464,14 +474,14 @@ export class MenuScene extends window.Phaser.Scene {
             });
             this.stageSelectionContainer.add(headerText);
 
-            // Stage items for this MIDI file
-            stages.forEach((stage, index) => {
+            // Stage items for this MIDI file (sorted by difficulty)
+            sortedStages.forEach((stage, index) => {
                 const item = this.createStageItem(stage, 50, yPos + index * itemHeight, itemHeight - 5);
-                this.stageSelectionContainer.add([item.bg, item.nameText, item.descText]);
+                this.stageSelectionContainer.add([item.bg, item.difficultyText, item.nameText, item.descText]);
                 this.stageItems.push({ stage, item });
             });
 
-            yPos += stages.length * itemHeight + 30;
+            yPos += sortedStages.length * itemHeight + 30;
         });
 
         // Select first stage by default
@@ -487,8 +497,27 @@ export class MenuScene extends window.Phaser.Scene {
             .setStrokeStyle(2, 0x555555)
             .setInteractive({ useHandCursor: true });
 
-        const nameText = this.add.text(x + 10, y - height / 4, stage.name, {
-            fontSize: '18px',
+        // Format stage name - extract difficulty and make it more prominent
+        const difficultyColors = {
+            easy: '#0f0',
+            normal: '#ff0',
+            hard: '#f00',
+            extreme: '#f0f'
+        };
+        const difficultyColor = difficultyColors[stage.difficulty] || '#0ff';
+        
+        // Show difficulty badge
+        const difficultyText = this.add.text(x + 10, y - height / 4, stage.difficulty.toUpperCase(), {
+            fontSize: '14px',
+            color: difficultyColor,
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
+
+        // Track name (without difficulty suffix since we show it as badge)
+        const trackName = stage.name.replace(/\s*-\s*(Easy|Normal|Hard|Extreme)$/i, '').trim();
+        const nameText = this.add.text(x + 100, y - height / 4, trackName, {
+            fontSize: '16px',
             color: '#0ff',
             fontFamily: 'Arial',
             fontStyle: 'bold'
@@ -505,7 +534,7 @@ export class MenuScene extends window.Phaser.Scene {
             this.selectStage(stage);
         });
 
-        return { bg, nameText, descText, stage };
+        return { bg, difficultyText, nameText, descText, stage };
     }
 
     selectStage(stage) {
@@ -520,6 +549,7 @@ export class MenuScene extends window.Phaser.Scene {
                 item.bg.setFillStyle(0x0a5).setStrokeStyle(2, 0x0ff);
                 item.nameText.setColor('#fff');
                 item.descText.setColor('#ddd');
+                // Keep difficulty color even when selected
             } else {
                 item.bg.setFillStyle(0x222222).setStrokeStyle(2, 0x555555);
                 item.nameText.setColor('#0ff');
