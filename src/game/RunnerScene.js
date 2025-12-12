@@ -18,6 +18,17 @@ export class RunnerScene extends window.Phaser.Scene {
         super({ key: 'RunnerScene' });
     }
 
+    init(data) {
+        // Accept stage config from MenuScene, or load from storage
+        if (data && data.stageConfig) {
+            this.stageConfig = data.stageConfig;
+            console.log(">> Using stage config from menu:", this.stageConfig);
+        } else {
+            this.stageConfig = loadStageConfig();
+            console.log(">> Loaded stage config from storage:", this.stageConfig);
+        }
+    }
+
     preload() {
         // ASSET MANAGEMENT: Generate Texture
         const graphics = this.make.graphics({ x: 0, y: 0, add: false });
@@ -25,10 +36,6 @@ export class RunnerScene extends window.Phaser.Scene {
         graphics.fillRect(0, 0, 40, 40);
         graphics.generateTexture('hazard_texture', 40, 40);
         console.log(">> Texture 'hazard_texture' generated");
-
-        // Load stage config
-        this.stageConfig = loadStageConfig();
-        console.log(">> Loaded stage config:", this.stageConfig);
 
         // Initialize track as empty (will be populated when MIDI loads)
         this.track = { events: [], nextIndex: 0 };
@@ -396,13 +403,14 @@ export class RunnerScene extends window.Phaser.Scene {
         this.restartText = this.add.text(
             this.width / 2,
             this.height / 2,
-            "Restart",
+            "Back to Menu",
             { fontSize: "24px", color: "#ffffff" }
         ).setOrigin(0.5).setDepth(100).setInteractive({ useHandCursor: true });
 
         this.restartText.on("pointerdown", async () => {
             await this.audioManager.stopAudio();
-            this.scene.restart();
+            // Return to menu instead of restarting
+            this.scene.start('MenuScene');
         });
     }
 

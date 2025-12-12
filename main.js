@@ -1,4 +1,5 @@
-// Entry point: boot Phaser with the modular RunnerScene
+// Entry point: boot Phaser with MenuScene and RunnerScene
+import { MenuScene } from './src/game/MenuScene.js';
 import { RunnerScene } from './src/game/RunnerScene.js';
 
 const BASE_CONFIG = {
@@ -6,7 +7,7 @@ const BASE_CONFIG = {
     width: 800,
     height: 600,
     backgroundColor: '#111111',
-    scene: [RunnerScene]
+    scene: [MenuScene, RunnerScene]
 };
 
 /**
