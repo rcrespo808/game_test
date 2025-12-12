@@ -103,9 +103,11 @@ describe('RunnerScene', () => {
       expect(scene.gridManager).toBeDefined();
       expect(scene.gridManager.lanes).toHaveLength(3);
       expect(scene.gridManager.columns).toHaveLength(3);
-      expect(scene.gridManager.lanes[0]).toBe(180); // 600 * 0.3
-      expect(scene.gridManager.lanes[1]).toBe(300); // 600 * 0.5
-      expect(scene.gridManager.lanes[2]).toBe(420); // 600 * 0.7
+      // Grid positions are now dynamically calculated based on count
+      // For 3 rows, positions are at 1/4, 2/4, 3/4 of height
+      expect(scene.gridManager.lanes[0]).toBe(150); // 600 / 4 * 1
+      expect(scene.gridManager.lanes[1]).toBe(300); // 600 / 4 * 2
+      expect(scene.gridManager.lanes[2]).toBe(450); // 600 / 4 * 3
     });
 
     test('should initialize managers in create', () => {
