@@ -19,11 +19,23 @@ const mockPhaser = {
         circle: jest.fn(() => ({
           setDepth: jest.fn().mockReturnThis(),
           setOrigin: jest.fn().mockReturnThis(),
-          setInteractive: jest.fn().mockReturnThis()
+          setInteractive: jest.fn().mockReturnThis(),
+          setScale: jest.fn().mockReturnThis(),
+          setPosition: jest.fn().mockReturnThis(),
+          x: 0,
+          y: 0,
+          scale: 1,
+          alpha: 1,
+          destroy: jest.fn()
         })),
         image: jest.fn(() => ({
           setDepth: jest.fn().mockReturnThis(),
-          setOrigin: jest.fn().mockReturnThis()
+          setOrigin: jest.fn().mockReturnThis(),
+          x: 0,
+          y: 0,
+          vx: 0,
+          rotation: 0,
+          destroy: jest.fn()
         })),
         line: jest.fn(() => ({
           setOrigin: jest.fn().mockReturnThis(),
@@ -52,11 +64,18 @@ const mockPhaser = {
             down: { isDown: false },
             left: { isDown: false },
             right: { isDown: false }
+          })),
+          addKey: jest.fn(() => ({
+            on: jest.fn(),
+            isDown: false
           }))
         }
       };
       this.time = {
         addEvent: jest.fn(() => ({
+          remove: jest.fn()
+        })),
+        delayedCall: jest.fn(() => ({
           remove: jest.fn()
         }))
       };
