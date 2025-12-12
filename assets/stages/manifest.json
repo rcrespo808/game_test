@@ -1,0 +1,52 @@
+{
+  "stages": [
+    {
+      "id": "bach_inventions_784__c_simonetto_easy",
+      "name": "Bach Inventions 784 Simonetto - Easy",
+      "description": "Gentle introduction, slower pace",
+      "midiPath": "assets/midi/bach_inventions_784_(c)simonetto.mid",
+      "trackIndex": -1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "bach_inventions_784__c_simonetto_normal",
+      "name": "Bach Inventions 784 Simonetto - Normal",
+      "description": "Balanced challenge level",
+      "midiPath": "assets/midi/bach_inventions_784_(c)simonetto.mid",
+      "trackIndex": -1,
+      "difficulty": "normal"
+    },
+    {
+      "id": "bach_inventions_784__c_simonetto_hard",
+      "name": "Bach Inventions 784 Simonetto - Hard",
+      "description": "Fast-paced, challenging gameplay",
+      "midiPath": "assets/midi/bach_inventions_784_(c)simonetto.mid",
+      "trackIndex": -1,
+      "difficulty": "hard"
+    },
+    {
+      "id": "sinfonias_bwv_794__c_sankey_easy",
+      "name": "Sinfonias Bwv 794 Sankey - Easy",
+      "description": "Gentle introduction, slower pace",
+      "midiPath": "assets/midi/sinfonias_bwv-794_(c)sankey.mid",
+      "trackIndex": -1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "sinfonias_bwv_794__c_sankey_normal",
+      "name": "Sinfonias Bwv 794 Sankey - Normal",
+      "description": "Balanced challenge level",
+      "midiPath": "assets/midi/sinfonias_bwv-794_(c)sankey.mid",
+      "trackIndex": -1,
+      "difficulty": "normal"
+    },
+    {
+      "id": "sinfonias_bwv_794__c_sankey_hard",
+      "name": "Sinfonias Bwv 794 Sankey - Hard",
+      "description": "Fast-paced, challenging gameplay",
+      "midiPath": "assets/midi/sinfonias_bwv-794_(c)sankey.mid",
+      "trackIndex": -1,
+      "difficulty": "hard"
+    }
+  ]
+}

@@ -53,11 +53,13 @@ See `tests/README.md` for more detailed testing documentation.
 To add new MIDI files to the game:
 
 1. Place `.mid` files in the `assets/midi/` directory
-2. Run `npm run generate-midi-manifest` to automatically update the manifest
-3. The new MIDI files will appear in the editor's MIDI file dropdown
+2. Run `npm run generate-midi-manifest` to automatically update the MIDI manifest
+3. Run `npm run generate-stage-manifest` to automatically generate stage configurations
+4. The new MIDI files and stage configurations will appear in the menu
 
-The manifest file (`assets/midi/manifest.json`) can also be edited manually:
+### Manually Editing Manifests
 
+**MIDI Manifest** (`assets/midi/manifest.json`):
 ```json
 {
   "midiFiles": [
@@ -69,3 +71,21 @@ The manifest file (`assets/midi/manifest.json`) can also be edited manually:
   ]
 }
 ```
+
+**Stage Manifest** (`assets/stages/manifest.json`):
+```json
+{
+  "stages": [
+    {
+      "id": "your_track_easy",
+      "name": "Your Track - Easy",
+      "description": "Easy difficulty preset",
+      "midiPath": "assets/midi/your-file.mid",
+      "trackIndex": -1,
+      "difficulty": "easy"
+    }
+  ]
+}
+```
+
+The stage manifest defines preset configurations that appear in the "PRESETS" mode of the menu. Each MIDI file automatically gets stage configurations for easy, normal, and hard difficulties when using the generate script.
