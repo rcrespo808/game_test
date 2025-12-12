@@ -10,7 +10,8 @@
     "test:ci": "jest --ci --coverage --maxWorkers=2",
     "test:verbose": "jest --verbose",
     "serve": "npx http-server -p 8000 -o",
-    "dev": "npx http-server -p 8000 -o"
+    "dev": "npx http-server -p 8000 -o",
+    "generate-midi-manifest": "node scripts/generate-midi-manifest.js"
   },
   "keywords": [
     "phaser",

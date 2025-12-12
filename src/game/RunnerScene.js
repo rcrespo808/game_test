@@ -137,9 +137,11 @@ export class RunnerScene extends window.Phaser.Scene {
             color: "#ffffff"
         }).setDepth(20);
 
-        // Editor UI Setup
+        // Editor UI Setup (async - loads MIDI manifest)
         this.editorUI = new EditorUI(this);
-        this.editorUI.setup();
+        this.editorUI.setup().catch(err => {
+            console.error(">> Editor UI setup error:", err);
+        });
 
         // Debug Text
         this.debugText = this.add.text(10, 10, "Debug Modular", { fontSize: '12px', fill: '#0f0' });

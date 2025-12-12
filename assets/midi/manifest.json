@@ -1,0 +1,14 @@
+{
+  "midiFiles": [
+    {
+      "name": "Bach Inventions 784 Simonetto",
+      "filename": "bach_inventions_784_(c)simonetto.mid",
+      "path": "assets/midi/bach_inventions_784_(c)simonetto.mid"
+    },
+    {
+      "name": "Sinfonias Bwv 794 Sankey",
+      "filename": "sinfonias_bwv-794_(c)sankey.mid",
+      "path": "assets/midi/sinfonias_bwv-794_(c)sankey.mid"
+    }
+  ]
+}

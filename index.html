@@ -135,7 +135,10 @@
         <div class="section">
             <h3>Track Selection</h3>
             <label>MIDI File:</label>
-            <input type="text" id="midiPath" readonly>
+            <select id="midiFile" style="width: 100%; max-width: 400px;">
+                <option value="">Loading...</option>
+            </select>
+            <small style="color: #888; display: block; margin-top: 4px;">Select a MIDI file from the assets/midi directory</small>
             <label>Track Index:</label>
             <select id="trackIndex">
                 <option value="-1">All Tracks</option>

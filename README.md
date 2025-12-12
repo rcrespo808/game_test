@@ -47,3 +47,25 @@ npm run test:coverage
   - `integration/` - Integration tests
 
 See `tests/README.md` for more detailed testing documentation.
+
+## Adding MIDI Files
+
+To add new MIDI files to the game:
+
+1. Place `.mid` files in the `assets/midi/` directory
+2. Run `npm run generate-midi-manifest` to automatically update the manifest
+3. The new MIDI files will appear in the editor's MIDI file dropdown
+
+The manifest file (`assets/midi/manifest.json`) can also be edited manually:
+
+```json
+{
+  "midiFiles": [
+    {
+      "name": "Your Track Name",
+      "filename": "your-file.mid",
+      "path": "assets/midi/your-file.mid"
+    }
+  ]
+}
+```
