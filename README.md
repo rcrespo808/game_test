@@ -88,7 +88,6 @@ See `tests/README.md` for more detailed testing documentation.
 - **Difficulty Presets**: Predefined settings stored in code (`src/config/gameConfig.js`)
 - **Game Settings**: Hazard speed, density, lookahead, grid size, and more
 - **Config Persistence**: Game configurations saved to localStorage
-- **Editor UI**: In-game editor for fine-tuning settings (press 'E' key)
 
 ## Adding MIDI Files
 

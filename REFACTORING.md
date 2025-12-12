@@ -58,9 +58,8 @@ main.js                        # Entry point (now just initializes Phaser)
    - **HazardManager**: Hazard lifecycle and collision detection
    - **HotspotManager**: Hotspot spawning and management
 
-5. **UI Module** (`src/ui/editor.js`)
-   - Extracted all editor UI logic into `EditorUI` class
-   - Handles form population and event bindings
+5. **UI Module** (removed)
+   - Editor UI has been removed - all configuration is now done through difficulty presets in `gameConfig.js`
 
 6. **RunnerScene** (`src/game/RunnerScene.js`)
    - Now orchestrates all systems
