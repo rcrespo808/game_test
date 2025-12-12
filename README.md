@@ -2,9 +2,11 @@
 
 A rhythm-based grid runner game built with Phaser 3, where players navigate a grid while avoiding hazards that spawn in sync with MIDI music. Features dynamic difficulty settings and MIDI-driven gameplay.
 
-![Game Screenshot](docs/images/game-screenshot.png)
+## 🎮 Play Now
 
-> **Note**: To add a screenshot, take a screenshot of the game and save it as `docs/images/game-screenshot.png`. Alternatively, you can use a different filename and update the path above.
+**[▶️ Play Grid Runner](https://rcrespo808.github.io/game_test/)** - Play the game directly in your browser!
+
+> The game is automatically deployed to GitHub Pages on every push to main. If the link doesn't work, make sure GitHub Pages is enabled in your repository settings.
 
 ## How to Run
 
