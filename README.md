@@ -2,6 +2,10 @@
 
 A rhythm-based grid runner game built with Phaser 3, where players navigate a grid while avoiding hazards that spawn in sync with MIDI music. Features dynamic difficulty settings and MIDI-driven gameplay.
 
+![Game Screenshot](docs/images/game-screenshot.png)
+
+> **Note**: To add a screenshot, take a screenshot of the game and save it as `docs/images/game-screenshot.png`. Alternatively, you can use a different filename and update the path above.
+
 ## How to Run
 
 1.  Open this folder in a terminal.
@@ -47,6 +51,20 @@ npm run test:coverage
   - `integration/` - Integration tests
 
 See `tests/README.md` for more detailed testing documentation.
+
+## Screenshots
+
+### Menu Screen
+![Menu Screen](docs/images/menu-screenshot.png)
+
+### Gameplay
+![Gameplay](docs/images/gameplay-screenshot.png)
+
+> **Adding Screenshots**: 
+> 1. Take screenshots of your game (menu and gameplay)
+> 2. Save them in `docs/images/` folder
+> 3. Update the image paths above to match your filenames
+> 4. Recommended formats: PNG (best quality) or JPG (smaller size)
 
 ## Game Features
 
