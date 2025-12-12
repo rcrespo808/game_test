@@ -35,7 +35,7 @@ export class EditorUI {
         // Populate MIDI file selector (after loading manifest)
         this.populateMIDISelector();
 
-        // Populate track index selector
+        // Populate track index selector (will update when MIDI loads)
         this.populateTrackSelector();
 
         // Populate fields
@@ -98,19 +98,52 @@ export class EditorUI {
     }
 
     /**
-     * Populate track selector dropdown
+     * Populate track selector dropdown with MIDI track information
      */
     populateTrackSelector() {
         const trackSelect = document.getElementById('trackIndex');
         if (!trackSelect) return;
+        
+        // Clear existing options
+        trackSelect.innerHTML = '<option value="-1">All Tracks</option>';
+        
         if (this.scene.midiData && this.scene.midiData.tracks) {
-            trackSelect.innerHTML = '<option value="-1">All Tracks</option>';
             for (let i = 0; i < this.scene.midiData.tracks.length; i++) {
+                const track = this.scene.midiData.tracks[i];
                 const opt = document.createElement('option');
                 opt.value = i;
-                opt.textContent = `Track ${i}`;
+                
+                // Build descriptive track name
+                let trackName = `Track ${i}`;
+                if (track.name) {
+                    trackName += `: ${track.name}`;
+                }
+                if (track.instrument && track.instrument.name) {
+                    trackName += ` (${track.instrument.name})`;
+                }
+                
+                // Add note count for additional info
+                const noteCount = track.notes ? track.notes.length : 0;
+                if (noteCount > 0) {
+                    trackName += ` - ${noteCount} notes`;
+                }
+                
+                opt.textContent = trackName;
                 trackSelect.appendChild(opt);
             }
+            
+            // Restore saved selection if it's valid
+            const savedIndex = this.scene.stageConfig.params.trackIndex;
+            if (savedIndex !== undefined && savedIndex >= -1 && savedIndex < this.scene.midiData.tracks.length) {
+                trackSelect.value = savedIndex;
+            }
+        } else {
+            // MIDI data not loaded yet, show placeholder
+            const opt = document.createElement('option');
+            opt.value = "";
+            opt.textContent = "Load MIDI file first";
+            opt.disabled = true;
+            trackSelect.appendChild(opt);
         }
     }
 
@@ -216,18 +249,18 @@ export class EditorUI {
                 if (this.scene.onStageConfigUpdated) {
                     this.scene.onStageConfigUpdated();
                 }
-                // Reload MIDI file with default path
-                if (this.scene.stageConfig.midiPath) {
-                    try {
-                        await this.scene.loadMIDIFile(this.scene.stageConfig.midiPath);
-                        if (this.scene.midiData) {
-                            this.scene.buildMIDIEvents();
-                            this.populateTrackSelector();
+                        // Reload MIDI file with default path
+                        if (this.scene.stageConfig.midiPath) {
+                            try {
+                                await this.scene.loadMIDIFile(this.scene.stageConfig.midiPath);
+                                if (this.scene.midiData) {
+                                    // Track selector will be updated by loadMIDIFile
+                                    this.scene.buildMIDIEvents();
+                                }
+                            } catch (err) {
+                                console.error(">> Failed to load default MIDI file:", err);
+                            }
                         }
-                    } catch (err) {
-                        console.error(">> Failed to load default MIDI file:", err);
-                    }
-                }
             }
         });
     }
@@ -278,8 +311,8 @@ export class EditorUI {
                             try {
                                 await this.scene.loadMIDIFile(this.scene.stageConfig.midiPath);
                                 if (this.scene.midiData) {
+                                    // Track selector will be updated by loadMIDIFile
                                     this.scene.buildMIDIEvents();
-                                    this.populateTrackSelector();
                                 }
                             } catch (err) {
                                 console.error(">> Failed to load imported MIDI file:", err);
@@ -311,13 +344,34 @@ export class EditorUI {
                     try {
                         await this.scene.loadMIDIFile(selectedPath);
                         if (this.scene.midiData) {
+                            // Update track selector first
+                            this.populateTrackSelector();
+                            // Rebuild events with current track selection
                             this.scene.buildMIDIEvents();
-                            this.populateTrackSelector(); // Update track selector with new MIDI data
                             console.log(">> MIDI file changed to:", selectedPath);
                         }
                     } catch (err) {
                         console.error(">> Failed to load selected MIDI file:", err);
                         alert(`Failed to load MIDI file: ${err.message}`);
+                    }
+                }
+            });
+        }
+
+        // Handle track selection change (needs to rebuild events)
+        const trackSelect = document.getElementById('trackIndex');
+        if (trackSelect) {
+            trackSelect.addEventListener('change', (e) => {
+                const selectedTrack = parseInt(e.target.value) || -1;
+                if (selectedTrack !== this.scene.stageConfig.params.trackIndex) {
+                    // Update config immediately
+                    this.scene.stageConfig.params.trackIndex = selectedTrack;
+                    saveStageConfig(this.scene.stageConfig);
+                    
+                    // Rebuild MIDI events with new track selection
+                    if (this.scene.midiData) {
+                        this.scene.buildMIDIEvents();
+                        console.log(">> Track selection changed to:", selectedTrack === -1 ? "All Tracks" : `Track ${selectedTrack}`);
                     }
                 }
             });
