@@ -34,23 +34,23 @@ export class RunnerScene extends window.Phaser.Scene {
         this.track = { events: [], nextIndex: 0 };
 
         // Load MIDI file (async, non-blocking)
-        this.loadMIDIFile(this.stageConfig.midiPath).catch(err => {
-            console.error(">> MIDI load error:", err);
-            // Keep empty track on error
-        });
+        this.midiLoadPromise = this.loadMIDIFile(this.stageConfig.midiPath);
     }
 
-    async loadMIDIFile(path) {
-        try {
-            const midi = await loadMIDI(path);
-            this.midiData = midi;
-            this.buildMIDIEvents();
-            console.log(">> MIDI loaded:", midi.name, "tracks:", midi.tracks.length);
-        } catch (err) {
-            console.error(">> MIDI load failed:", err);
-            this.midiData = null;
-            this.track = { events: [], nextIndex: 0 };
-        }
+    loadMIDIFile(path) {
+        this.midiLoadPromise = (async () => {
+            try {
+                const midi = await loadMIDI(path);
+                this.midiData = midi;
+                this.buildMIDIEvents();
+                console.log(">> MIDI loaded:", midi.name, "tracks:", midi.tracks.length);
+            } catch (err) {
+                console.error(">> MIDI load failed:", err);
+                this.midiData = null;
+                this.track = { events: [], nextIndex: 0 };
+            }
+        })();
+        return this.midiLoadPromise;
     }
 
     buildMIDIEvents() {
@@ -118,6 +118,7 @@ export class RunnerScene extends window.Phaser.Scene {
         // Game State
         this.isDead = false;
         this.isRunning = false;
+        this.isStarting = false;
         this.greenScore = 0;
 
         // UI
@@ -194,52 +195,89 @@ export class RunnerScene extends window.Phaser.Scene {
         }
     }
 
-    startGame() {
-        // Stop any existing audio first to allow restart
-        this.audioManager.stopAudio();
-        
-        this.isRunning = true;
-        this.isDead = false;
-        this.startText.setVisible(false);
-        this.greenScore = 0;
-        this.scoreText.setText("Score: 0");
+    async startGame() {
+        if (this.isStarting) return;
+        this.isStarting = true;
 
-        this.playerManager.reset(
-            this.gridManager.getCenterRow(), 
-            this.gridManager.getCenterColumn()
-        );
+        try {
+            // Stop any existing audio first to allow restart (wait for cleanup)
+            await this.audioManager.stopAudio();
+            
+            this.isRunning = false;
+            this.isDead = false;
+            this.startText.setVisible(false);
+            this.greenScore = 0;
+            this.scoreText.setText("Score: 0");
 
-        // Reset managers
-        this.hazardManager.clear();
-        this.hotspotManager.reset();
+            this.playerManager.reset(
+                this.gridManager.getCenterRow(), 
+                this.gridManager.getCenterColumn()
+            );
 
-        // Reset MIDI track
-        if (this.track) {
-            this.track.nextIndex = 0;
-            console.log(`>> Reset track, ${this.track.events.length} events ready`);
-        } else {
-            console.warn(">> No track available when starting game!");
-            this.track = { events: [], nextIndex: 0 };
+            // Reset managers
+            this.hazardManager.clear();
+            this.hotspotManager.reset();
+
+            // Reset MIDI track
+            if (this.track) {
+                this.track.nextIndex = 0;
+                console.log(`>> Reset track, ${this.track.events.length} events ready`);
+            } else {
+                console.warn(">> No track available when starting game!");
+                this.track = { events: [], nextIndex: 0 };
+            }
+
+            // Ensure MIDI is loaded before starting audio; if not, wait for it
+            if (this.midiLoadPromise) {
+                try {
+                    await this.midiLoadPromise;
+                } catch (err) {
+                    console.error(">> MIDI load failed before start:", err);
+                }
+            }
+
+            // Start audio playback and get the scheduled start time
+            let audioStartTime = null;
+            if (this.audioManager.audioEnabled && this.midiData) {
+                try {
+                    audioStartTime = await this.audioManager.startAudio(
+                        this.midiData, 
+                        this.stageConfig.params, 
+                        this.trackBPM
+                    );
+                } catch (err) {
+                    console.error(">> Audio start error (non-fatal):", err);
+                }
+            }
+
+            // Capture track start time aligned with scheduled audio
+            // audioStartTime is in Tone.now() seconds, convert to performance.now() milliseconds
+            if (audioStartTime !== null && window.Tone) {
+                const toneNow = window.Tone.now();
+                const perfNow = performance.now();
+                // Calculate the offset between Tone time and performance time
+                const toneStartOffset = audioStartTime - toneNow;
+                // Convert to milliseconds and add to current performance time
+                this.trackStartMs = perfNow + (toneStartOffset * 1000);
+                console.log(`>> Track start time synced: Tone=${audioStartTime.toFixed(3)}s, Perf=${this.trackStartMs.toFixed(1)}ms`);
+            } else {
+                // Fallback to current time if audio failed
+                this.trackStartMs = performance.now();
+                console.log(`>> Track start time (no audio): ${this.trackStartMs.toFixed(1)}ms`);
+            }
+
+            this.isRunning = true;
+
+            // Remove old timers (if any)
+            if (this.spawnTimer) this.spawnTimer.remove(false);
+            if (this.greenTimer) this.greenTimer.remove(false);
+            if (this.redTimer) this.redTimer.remove(false);
+        } catch (err) {
+            console.error(">> Error in startGame:", err);
+            this.isRunning = false;
+        } finally {
+            this.isStarting = false;
         }
-
-        // Capture track start time
-        this.trackStartMs = performance.now();
-
-        // Start audio playback (non-blocking)
-        if (this.audioManager.audioEnabled && this.midiData) {
-            this.audioManager.startAudio(
-                this.midiData, 
-                this.stageConfig.params, 
-                this.trackBPM
-            ).catch(err => {
-                console.error(">> Audio start error (non-fatal):", err);
-            });
-        }
-
-        // Remove old timers (if any)
-        if (this.spawnTimer) this.spawnTimer.remove(false);
-        if (this.greenTimer) this.greenTimer.remove(false);
-        if (this.redTimer) this.redTimer.remove(false);
     }
 
     getTrackTimeSec() {
@@ -350,14 +388,14 @@ export class RunnerScene extends window.Phaser.Scene {
             { fontSize: "24px", color: "#ffffff" }
         ).setOrigin(0.5).setDepth(100).setInteractive({ useHandCursor: true });
 
-        this.restartText.on("pointerdown", () => {
-            this.audioManager.stopAudio();
+        this.restartText.on("pointerdown", async () => {
+            await this.audioManager.stopAudio();
             this.scene.restart();
         });
     }
 
-    shutdown() {
+    async shutdown() {
         // Cleanup when scene is destroyed
-        this.audioManager.stopAudio();
+        await this.audioManager.stopAudio();
     }
 }

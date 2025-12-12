@@ -134,7 +134,7 @@ describe('RunnerScene', () => {
       scene.create();
     });
 
-    test('should start game when startGame is called', () => {
+    test('should start game when startGame is called', async () => {
       scene.isRunning = false;
       scene.isDead = false;
       scene.startText = { setVisible: jest.fn() };
@@ -142,10 +142,12 @@ describe('RunnerScene', () => {
       scene.hazardManager.clear = jest.fn();
       scene.hotspotManager.reset = jest.fn();
       scene.track = { events: [], nextIndex: 0 };
-      scene.audioManager.stopAudio = jest.fn();
+      scene.audioManager.stopAudio = jest.fn().mockResolvedValue(undefined);
+      scene.audioManager.startAudio = jest.fn().mockResolvedValue(null);
       scene.audioManager.audioEnabled = false;
+      scene.midiLoadPromise = Promise.resolve();
 
-      scene.startGame();
+      await scene.startGame();
 
       expect(scene.isRunning).toBe(true);
       expect(scene.isDead).toBe(false);
