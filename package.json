@@ -11,8 +11,7 @@
     "test:verbose": "jest --verbose",
     "serve": "npx http-server -p 8000 -o",
     "dev": "npx http-server -p 8000 -o",
-    "generate-midi-manifest": "node scripts/generate-midi-manifest.js",
-    "generate-stage-manifest": "node scripts/generate-stage-manifest.js"
+    "generate-midi-manifest": "node scripts/generate-midi-manifest.js"
   },
   "keywords": [
     "phaser",
