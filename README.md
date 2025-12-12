@@ -6,12 +6,7 @@ A rhythm-based grid runner game built with Phaser 3, where players navigate a gr
 
 **[▶️ Play Grid Runner](https://rcrespo808.github.io/game_test/)** - Play the game directly in your browser!
 
-> **⚠️ Setup Required**: To enable the live game demo, you need to:
-> 1. Go to repository **Settings → Pages** → https://github.com/rcrespo808/game_test/settings/pages
-> 2. Under **Source**, select **"GitHub Actions"** (not "Deploy from a branch")
-> 3. Save and wait for deployment to complete
-> 
-> See [GitHub Pages Setup Guide](docs/GITHUB_PAGES_SETUP.md) for detailed instructions.
+The game is automatically deployed and updated on every push to main. Enjoy!
 
 ## How to Run
 
