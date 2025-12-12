@@ -77,35 +77,46 @@
             border-radius: 2px;
         }
 
-        #editor select {
-            font-family: monospace;
-            font-size: 12px;
-            padding: 6px;
-            cursor: pointer;
-        }
-
-        #editor select:hover {
-            border-color: #777;
-        }
-
-        #editor select:focus {
-            outline: none;
-            border-color: #0ff;
-            box-shadow: 0 0 4px rgba(0, 255, 255, 0.3);
-        }
-
-        #editor .track-info {
-            margin-top: 8px;
+        /* Track Selector Styles */
+        .track-item {
             padding: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid #444;
-            border-radius: 3px;
+            margin: 4px 0;
+            background: #222;
+            border: 2px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .track-item:hover {
+            background: #2a2a2a;
+            border-color: #0ff;
+        }
+
+        .track-item.selected {
+            background: #0a5;
+            border-color: #0ff;
+            color: #fff;
+        }
+
+        .track-item-header {
+            font-weight: bold;
+            color: #0ff;
+            margin-bottom: 4px;
+        }
+
+        .track-item.selected .track-item-header {
+            color: #fff;
+        }
+
+        .track-item-info {
             font-size: 11px;
             color: #aaa;
+            margin-top: 2px;
         }
 
-        #editor .track-info strong {
-            color: #0ff;
+        .track-item.selected .track-item-info {
+            color: #ddd;
         }
 
         #editor button {
@@ -171,13 +182,15 @@
             </select>
             <small style="color: #888; display: block; margin-top: 4px;">Select a MIDI file from the assets/midi directory</small>
             <label>Track Selection:</label>
-            <select id="trackIndex" style="width: 100%; max-width: 400px;">
-                <option value="-1">All Tracks</option>
-            </select>
-            <small style="color: #888; display: block; margin-top: 4px;">Select a specific track or use "All Tracks" to combine all tracks</small>
-            <div id="trackInfo" class="track-info" style="display: none;">
-                <strong>Selected Track:</strong> <span id="trackInfoText">-</span>
+            <div id="trackSelector" style="max-height: 300px; overflow-y: auto; border: 1px solid #555; border-radius: 2px; padding: 8px; background: #1a1a1a;">
+                <div id="trackList" style="display: none;">
+                    <!-- Tracks will be populated here -->
+                </div>
+                <div id="trackSelectorPlaceholder" style="color: #888; text-align: center; padding: 20px;">
+                    Load MIDI file to see tracks
+                </div>
             </div>
+            <small style="color: #888; display: block; margin-top: 4px;">Click a track to select it, or "All Tracks" to combine all</small>
         </div>
 
         <div class="section">

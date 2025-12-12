@@ -98,105 +98,113 @@ export class EditorUI {
     }
 
     /**
-     * Populate track selector dropdown with MIDI track information
+     * Populate track selector with visual track list
      */
     populateTrackSelector() {
-        const trackSelect = document.getElementById('trackIndex');
-        if (!trackSelect) return;
+        const trackList = document.getElementById('trackList');
+        const placeholder = document.getElementById('trackSelectorPlaceholder');
         
-        // Clear existing options
-        trackSelect.innerHTML = '<option value="-1">All Tracks (combine all tracks)</option>';
+        if (!trackList || !placeholder) return;
+        
+        // Clear existing tracks
+        trackList.innerHTML = '';
         
         if (this.scene.midiData && this.scene.midiData.tracks) {
+            // Show track list, hide placeholder
+            trackList.style.display = 'block';
+            placeholder.style.display = 'none';
+            
+            // Add "All Tracks" option
+            const allTracksItem = this.createTrackItem(-1, null, 'All Tracks', 'Combine all tracks');
+            const savedIndex = this.scene.stageConfig.params.trackIndex;
+            if (savedIndex === -1) {
+                allTracksItem.classList.add('selected');
+            }
+            trackList.appendChild(allTracksItem);
+            
+            // Add individual tracks
             for (let i = 0; i < this.scene.midiData.tracks.length; i++) {
                 const track = this.scene.midiData.tracks[i];
-                const opt = document.createElement('option');
-                opt.value = i;
+                const noteCount = track.notes ? track.notes.length : 0;
                 
-                // Build descriptive track name
+                // Build track name
                 let trackName = `Track ${i}`;
                 if (track.name) {
-                    trackName += `: ${track.name}`;
+                    trackName = track.name;
                 }
+                
+                // Build info text
+                let infoText = `${noteCount} notes`;
                 if (track.instrument && track.instrument.name) {
-                    trackName += ` (${track.instrument.name})`;
+                    infoText = `${track.instrument.name} • ${infoText}`;
                 }
                 
-                // Add note count for additional info
-                const noteCount = track.notes ? track.notes.length : 0;
-                if (noteCount > 0) {
-                    trackName += ` - ${noteCount} notes`;
+                const trackItem = this.createTrackItem(i, track, trackName, infoText);
+                if (savedIndex === i) {
+                    trackItem.classList.add('selected');
                 }
-                
-                opt.textContent = trackName;
-                trackSelect.appendChild(opt);
-            }
-            
-            // Restore saved selection if it's valid
-            const savedIndex = this.scene.stageConfig.params.trackIndex;
-            if (savedIndex !== undefined && savedIndex >= -1 && savedIndex < this.scene.midiData.tracks.length) {
-                trackSelect.value = savedIndex;
-                this.updateTrackInfo(savedIndex);
-            } else {
-                this.updateTrackInfo(-1);
+                trackList.appendChild(trackItem);
             }
         } else {
             // MIDI data not loaded yet, show placeholder
-            const opt = document.createElement('option');
-            opt.value = "";
-            opt.textContent = "Load MIDI file first";
-            opt.disabled = true;
-            trackSelect.appendChild(opt);
-            this.hideTrackInfo();
+            trackList.style.display = 'none';
+            placeholder.style.display = 'block';
         }
     }
 
     /**
-     * Update track information display
+     * Create a track item element
      */
-    updateTrackInfo(trackIndex) {
-        const trackInfo = document.getElementById('trackInfo');
-        const trackInfoText = document.getElementById('trackInfoText');
+    createTrackItem(index, track, name, info) {
+        const item = document.createElement('div');
+        item.className = 'track-item';
+        item.dataset.trackIndex = index;
         
-        if (!trackInfo || !trackInfoText) return;
+        const header = document.createElement('div');
+        header.className = 'track-item-header';
+        header.textContent = name;
         
-        if (trackIndex === -1) {
-            if (this.scene.midiData && this.scene.midiData.tracks) {
-                const totalNotes = this.scene.midiData.tracks.reduce((sum, track) => {
-                    return sum + (track.notes ? track.notes.length : 0);
-                }, 0);
-                trackInfoText.textContent = `All ${this.scene.midiData.tracks.length} tracks (${totalNotes} total notes)`;
-                trackInfo.style.display = 'block';
-            } else {
-                this.hideTrackInfo();
-            }
-        } else if (this.scene.midiData && this.scene.midiData.tracks[trackIndex]) {
-            const track = this.scene.midiData.tracks[trackIndex];
-            let info = `Track ${trackIndex}`;
-            
-            if (track.name) {
-                info += `: "${track.name}"`;
-            }
-            if (track.instrument && track.instrument.name) {
-                info += ` | Instrument: ${track.instrument.name}`;
-            }
-            const noteCount = track.notes ? track.notes.length : 0;
-            info += ` | Notes: ${noteCount}`;
-            
-            trackInfoText.textContent = info;
-            trackInfo.style.display = 'block';
-        } else {
-            this.hideTrackInfo();
-        }
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'track-item-info';
+        infoDiv.textContent = info;
+        
+        item.appendChild(header);
+        item.appendChild(infoDiv);
+        
+        // Add click handler
+        item.addEventListener('click', () => {
+            this.selectTrack(index);
+        });
+        
+        return item;
     }
 
     /**
-     * Hide track information display
+     * Handle track selection
      */
-    hideTrackInfo() {
-        const trackInfo = document.getElementById('trackInfo');
-        if (trackInfo) {
-            trackInfo.style.display = 'none';
+    selectTrack(index) {
+        // Update UI - remove previous selection
+        const trackList = document.getElementById('trackList');
+        if (trackList) {
+            const items = trackList.querySelectorAll('.track-item');
+            items.forEach(item => item.classList.remove('selected'));
+            
+            // Add selection to clicked item
+            const selectedItem = trackList.querySelector(`[data-track-index="${index}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('selected');
+            }
+        }
+        
+        // Update config
+        const oldIndex = this.scene.stageConfig.params.trackIndex;
+        this.scene.stageConfig.params.trackIndex = index;
+        saveStageConfig(this.scene.stageConfig);
+        
+        // Rebuild MIDI events if selection changed
+        if (oldIndex !== index && this.scene.midiData) {
+            this.scene.buildMIDIEvents();
+            console.log(">> Track selection changed to:", index === -1 ? "All Tracks" : `Track ${index}`);
         }
     }
 
@@ -223,9 +231,8 @@ export class EditorUI {
         if (midiSelect) {
             midiSelect.value = this.scene.stageConfig.midiPath || '';
         }
-        safeSetValue('trackIndex', config.trackIndex);
-        // Update track info display
-        this.updateTrackInfo(config.trackIndex !== undefined ? config.trackIndex : -1);
+        // Track selection is handled visually, no need to set value here
+        // It will be updated when populateTrackSelector is called
         safeSetValue('bpmOverride', config.bpmOverride);
         safeSetValue('lookaheadSec', config.lookaheadSec);
         safeSetValue('quantizeDiv', config.quantizeDiv);
@@ -413,30 +420,8 @@ export class EditorUI {
             });
         }
 
-        // Handle track selection change (needs to rebuild events)
-        const trackSelect = document.getElementById('trackIndex');
-        if (trackSelect) {
-            trackSelect.addEventListener('change', (e) => {
-                const selectedTrack = parseInt(e.target.value) || -1;
-                
-                // Update track info display
-                this.updateTrackInfo(selectedTrack);
-                
-                if (selectedTrack !== this.scene.stageConfig.params.trackIndex) {
-                    // Update config immediately
-                    this.scene.stageConfig.params.trackIndex = selectedTrack;
-                    saveStageConfig(this.scene.stageConfig);
-                    
-                    // Rebuild MIDI events with new track selection
-                    if (this.scene.midiData) {
-                        this.scene.buildMIDIEvents();
-                        const trackName = selectedTrack === -1 ? "All Tracks" : 
-                            (this.scene.midiData.tracks[selectedTrack]?.name || `Track ${selectedTrack}`);
-                        console.log(">> Track selection changed to:", trackName);
-                    }
-                }
-            });
-        }
+        // Track selection is now handled by click events on track items
+        // (see createTrackItem and selectTrack methods)
 
         // Schedule rebuild with debouncing
         const scheduleRebuild = () => {
@@ -480,7 +465,7 @@ export class EditorUI {
             });
         }
 
-        // Bind other inputs (excluding midiFile which has its own handler)
+        // Bind other inputs (excluding midiFile and track selector which have their own handlers)
         const inputs = editor.querySelectorAll('input:not(#density):not(#densitySlider), select:not(#midiFile)');
         inputs.forEach(input => {
             input.addEventListener('change', scheduleRebuild);
@@ -535,8 +520,10 @@ export class EditorUI {
             this.scene.stageConfig.midiPath = midiFileEl.value;
         }
 
+        // Track index is saved automatically when tracks are clicked
+        // Just ensure it's in the config (already set by selectTrack)
         const config = this.scene.stageConfig.params;
-        config.trackIndex = parseInt(getValue('trackIndex', '-1')) || -1;
+        // config.trackIndex is already set by visual selection
         config.bpmOverride = parseFloat(getValue('bpmOverride', '0')) || 0;
         config.lookaheadSec = parseFloat(getValue('lookaheadSec', '0.1')) || 0.1;
         config.quantizeDiv = parseInt(getValue('quantizeDiv', '0')) || 0;
