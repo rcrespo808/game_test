@@ -17,7 +17,8 @@ export class HazardManager {
      * Spawn a hazard from a MIDI event
      */
     spawnHazardFromEvent(evt) {
-        const baseY = this.gridManager.getLaneY(evt.laneRow);
+        const laneRow = this.gridManager.clampRow(evt.laneRow ?? this.gridManager.getCenterRow());
+        const baseY = this.gridManager.getLaneY(laneRow);
         const offset = window.Phaser.Math.Between(-this.config.laneJitter, this.config.laneJitter);
         const y = baseY + offset;
 

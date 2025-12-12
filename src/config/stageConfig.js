@@ -4,6 +4,8 @@ export const DEFAULT_STAGE_CONFIG = {
     midiPath: "assets/midi/bach_inventions_784_(c)simonetto.mid",
     version: 1,
     params: {
+        gridRows: 3,
+        gridCols: 3,
         trackIndex: -1, // -1 = all tracks
         bpmOverride: 0, // 0 = use MIDI tempo
         lookaheadSec: 0.1,
@@ -31,12 +33,22 @@ export function loadStageConfig() {
     if (stored) {
         try {
             const parsed = JSON.parse(stored);
-            return { ...DEFAULT_STAGE_CONFIG, ...parsed };
+            return {
+                ...DEFAULT_STAGE_CONFIG,
+                ...parsed,
+                params: {
+                    ...DEFAULT_STAGE_CONFIG.params,
+                    ...(parsed.params || {})
+                }
+            };
         } catch (e) {
             console.warn('Failed to parse stored config:', e);
         }
     }
-    return { ...DEFAULT_STAGE_CONFIG };
+    return { 
+        ...DEFAULT_STAGE_CONFIG, 
+        params: { ...DEFAULT_STAGE_CONFIG.params } 
+    };
 }
 
 // Save stage config to localStorage

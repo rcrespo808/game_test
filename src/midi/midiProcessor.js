@@ -3,6 +3,17 @@
  * Converts MIDI data into game events
  */
 
+function mapPitchToLane(midiValue, config) {
+    const rows = Math.max(3, Math.min(5, config.gridRows || 3));
+    const minPitch = Math.min(config.lowCut, config.highCut);
+    const maxPitch = Math.max(config.lowCut, config.highCut);
+    const clamped = Math.max(minPitch, Math.min(maxPitch, midiValue));
+    const range = Math.max(1, maxPitch - minPitch);
+    const normalized = (clamped - minPitch) / range;
+    const laneFromTop = Math.min(rows - 1, Math.floor(normalized * rows));
+    return (rows - 1) - laneFromTop;
+}
+
 /**
  * Build MIDI events from MIDI data and configuration
  * @param {Object} midiData - Parsed MIDI data
@@ -41,12 +52,7 @@ export function buildMIDIEvents(midiData, config) {
             }
 
             // Map pitch to lane row
-            let laneRow = 0; // top
-            if (note.midi < config.lowCut) {
-                laneRow = 2; // bottom
-            } else if (note.midi < config.highCut) {
-                laneRow = 1; // middle
-            }
+            const laneRow = mapPitchToLane(note.midi, config);
 
             // Map velocity to hazard type (0=diamond, 1=square, 2=triangle)
             let hazardType = 0;

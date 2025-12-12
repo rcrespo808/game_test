@@ -80,8 +80,13 @@ export class RunnerScene extends window.Phaser.Scene {
         this.height = height;
 
         // Initialize managers
-        this.gridManager = new GridManager(width, height);
-        this.playerManager = new PlayerManager(this, this.gridManager);
+        this.gridManager = new GridManager(width, height, this.stageConfig.params);
+        this.playerManager = new PlayerManager(
+            this, 
+            this.gridManager, 
+            this.gridManager.getCenterRow(), 
+            this.gridManager.getCenterColumn()
+        );
         this.hazardManager = new HazardManager(this, this.gridManager, this.stageConfig);
         this.hotspotManager = new HotspotManager(this, this.gridManager, this.stageConfig);
         this.audioManager = new AudioManager();
@@ -91,9 +96,7 @@ export class RunnerScene extends window.Phaser.Scene {
         this.audioManager.setVolume(this.stageConfig.params.audioVolume || 70);
 
         // Lane visuals
-        for (let y of this.gridManager.lanes) {
-            this.add.line(0, 0, 0, y, width, y, 0xffffff, 0.1).setOrigin(0, 0).setDepth(0);
-        }
+        this.drawGridLines();
 
         // MIDI Track State
         this.trackStartMs = null;
@@ -141,6 +144,56 @@ export class RunnerScene extends window.Phaser.Scene {
         this.debugText = this.add.text(10, 10, "Debug Modular", { fontSize: '12px', fill: '#0f0' });
     }
 
+    drawGridLines() {
+        if (this.gridLines && Array.isArray(this.gridLines)) {
+            this.gridLines.forEach(line => line.destroy());
+        }
+        this.gridLines = [];
+
+        for (let y of this.gridManager.lanes) {
+            this.gridLines.push(
+                this.add.line(0, 0, 0, y, this.width, y, 0xffffff, 0.1).setOrigin(0, 0).setDepth(0)
+            );
+        }
+
+        for (let x of this.gridManager.columns) {
+            this.gridLines.push(
+                this.add.line(0, 0, x, 0, x, this.height, 0xffffff, 0.08).setOrigin(0, 0).setDepth(0)
+            );
+        }
+    }
+
+    rebuildGridLayout() {
+        this.gridManager = new GridManager(this.width, this.height, this.stageConfig.params);
+
+        this.hazardManager.gridManager = this.gridManager;
+        this.hazardManager.config = this.stageConfig.params;
+        this.hazardManager.clear();
+
+        this.hotspotManager.gridManager = this.gridManager;
+        this.hotspotManager.config = this.stageConfig.params;
+        this.hotspotManager.reset();
+
+        this.playerManager.gridManager = this.gridManager;
+        this.playerManager.reset(
+            this.gridManager.getCenterRow(), 
+            this.gridManager.getCenterColumn()
+        );
+
+        this.drawGridLines();
+    }
+
+    onStageConfigUpdated() {
+        this.hazardManager.config = this.stageConfig.params;
+        this.hotspotManager.config = this.stageConfig.params;
+
+        const rows = this.stageConfig.params.gridRows || 3;
+        const cols = this.stageConfig.params.gridCols || 3;
+        if (rows !== this.gridManager.getRowCount() || cols !== this.gridManager.getColumnCount()) {
+            this.rebuildGridLayout();
+        }
+    }
+
     startGame() {
         // Stop any existing audio first to allow restart
         this.audioManager.stopAudio();
@@ -150,6 +203,11 @@ export class RunnerScene extends window.Phaser.Scene {
         this.startText.setVisible(false);
         this.greenScore = 0;
         this.scoreText.setText("Score: 0");
+
+        this.playerManager.reset(
+            this.gridManager.getCenterRow(), 
+            this.gridManager.getCenterColumn()
+        );
 
         // Reset managers
         this.hazardManager.clear();

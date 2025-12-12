@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3x3 Grid Runner</title>
+    <title>Grid Runner</title>
     <style>
         body {
             margin: 0;
@@ -140,6 +140,15 @@
             <select id="trackIndex">
                 <option value="-1">All Tracks</option>
             </select>
+        </div>
+
+        <div class="section">
+            <h3>Map</h3>
+            <label>Grid Rows (3-5):</label>
+            <input type="number" id="gridRows" min="3" max="5" step="1">
+            <label>Grid Columns (3-5):</label>
+            <input type="number" id="gridCols" min="3" max="5" step="1">
+            <small style="color: #888; display: block; margin-top: 4px;">Adjust stage size for larger 5x5 grids or tighter 3x3 layouts.</small>
         </div>
 
         <div class="section">

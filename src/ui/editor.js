@@ -88,6 +88,10 @@ export class EditorUI {
         document.getElementById('redEverySubdiv').value = config.redEverySubdiv;
         document.getElementById('seedA').value = config.seedA;
         document.getElementById('seedB').value = config.seedB;
+        const rows = config.gridRows || 3;
+        const cols = config.gridCols || rows;
+        document.getElementById('gridRows').value = rows;
+        document.getElementById('gridCols').value = cols;
         document.getElementById('enableAudio').checked = config.enableAudio !== false;
         document.getElementById('audioVolume').value = config.audioVolume || 70;
         document.getElementById('volumeDisplay').textContent = (config.audioVolume || 70) + '%';
@@ -118,6 +122,9 @@ export class EditorUI {
                 newSaveBtn.textContent = originalText;
                 newSaveBtn.style.background = "";
             }, 1000);
+            if (this.scene.onStageConfigUpdated) {
+                this.scene.onStageConfigUpdated();
+            }
             document.getElementById('editor').classList.toggle('visible');
         });
     }
@@ -128,9 +135,15 @@ export class EditorUI {
     bindResetButton() {
         document.getElementById('resetBtn').addEventListener('click', () => {
             if (confirm('Reset to defaults?')) {
-                this.scene.stageConfig = { ...DEFAULT_STAGE_CONFIG };
+                this.scene.stageConfig = { 
+                    ...DEFAULT_STAGE_CONFIG, 
+                    params: { ...DEFAULT_STAGE_CONFIG.params } 
+                };
                 saveStageConfig(this.scene.stageConfig);
                 this.setup();
+                if (this.scene.onStageConfigUpdated) {
+                    this.scene.onStageConfigUpdated();
+                }
                 this.scene.buildMIDIEvents();
             }
         });
@@ -153,13 +166,23 @@ export class EditorUI {
             document.getElementById('importFile').click();
         });
 
-        document.getElementById('importFile').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                importStageConfig(file, (config) => {
-                    this.scene.stageConfig = { ...DEFAULT_STAGE_CONFIG, ...config };
-                    saveStageConfig(this.scene.stageConfig);
-                    this.setup();
+            document.getElementById('importFile').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    importStageConfig(file, (config) => {
+                        this.scene.stageConfig = { 
+                            ...DEFAULT_STAGE_CONFIG, 
+                            ...config, 
+                            params: { 
+                                ...DEFAULT_STAGE_CONFIG.params, 
+                                ...(config.params || {}) 
+                            } 
+                        };
+                        saveStageConfig(this.scene.stageConfig);
+                        this.setup();
+                        if (this.scene.onStageConfigUpdated) {
+                            this.scene.onStageConfigUpdated();
+                        }
                     this.scene.loadMIDIFile(this.scene.stageConfig.midiPath).then(() => {
                         if (this.scene.midiData) {
                             this.scene.buildMIDIEvents();
@@ -182,6 +205,9 @@ export class EditorUI {
             this.rebuildTimeout = setTimeout(() => {
                 this.saveEditorConfig();
                 this.scene.buildMIDIEvents();
+                if (this.scene.onStageConfigUpdated) {
+                    this.scene.onStageConfigUpdated();
+                }
             }, 500);
         };
 
@@ -264,6 +290,9 @@ export class EditorUI {
         config.redEverySubdiv = parseInt(document.getElementById('redEverySubdiv').value) || 2;
         config.seedA = parseInt(document.getElementById('seedA').value) || 7;
         config.seedB = parseInt(document.getElementById('seedB').value) || 3;
+        const clampSize = (val) => Math.max(3, Math.min(5, val || 3));
+        config.gridRows = clampSize(parseInt(document.getElementById('gridRows').value));
+        config.gridCols = clampSize(parseInt(document.getElementById('gridCols').value));
         config.enableAudio = document.getElementById('enableAudio').checked;
         config.audioVolume = parseInt(document.getElementById('audioVolume').value) || 70;
 
