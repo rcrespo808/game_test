@@ -28,6 +28,20 @@ const mockPhaser = {
           alpha: 1,
           destroy: jest.fn()
         })),
+        rectangle: jest.fn(() => ({
+          setDepth: jest.fn().mockReturnThis(),
+          setOrigin: jest.fn().mockReturnThis(),
+          setInteractive: jest.fn().mockReturnThis(),
+          setFillStyle: jest.fn().mockReturnThis(),
+          setStrokeStyle: jest.fn().mockReturnThis(),
+          setVisible: jest.fn().mockReturnThis(),
+          width: 0,
+          height: 0,
+          x: 0,
+          y: 0,
+          alpha: 1,
+          destroy: jest.fn()
+        })),
         image: jest.fn(() => ({
           setDepth: jest.fn().mockReturnThis(),
           setOrigin: jest.fn().mockReturnThis(),
@@ -47,6 +61,9 @@ const mockPhaser = {
           setInteractive: jest.fn().mockReturnThis(),
           setVisible: jest.fn().mockReturnThis(),
           setText: jest.fn().mockReturnThis(),
+          setColor: jest.fn().mockReturnThis(),
+          setAlpha: jest.fn().mockReturnThis(),
+          alpha: 1,
           on: jest.fn()
         }))
       };
