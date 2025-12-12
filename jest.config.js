@@ -4,6 +4,7 @@ module.exports = {
   testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
   collectCoverageFrom: [
     'main.js',
+    'src/**/*.js',
     '!**/node_modules/**',
     '!**/tests/**'
   ],
@@ -19,7 +20,8 @@ module.exports = {
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   moduleNameMapper: {
-    '^phaser$': '<rootDir>/tests/mocks/phaser.mock.js'
+    '^phaser$': '<rootDir>/tests/mocks/phaser.mock.js',
+    '^@/(.*)$': '<rootDir>/src/$1'
   },
   transform: {
     '^.+\\.js$': 'babel-jest'

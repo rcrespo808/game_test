@@ -1,0 +1,118 @@
+/**
+ * MIDI Processing Module
+ * Converts MIDI data into game events
+ */
+
+/**
+ * Build MIDI events from MIDI data and configuration
+ * @param {Object} midiData - Parsed MIDI data
+ * @param {Object} config - Stage configuration params
+ * @returns {Object} Track object with events and metadata
+ */
+export function buildMIDIEvents(midiData, config) {
+    if (!midiData) {
+        return { events: [], nextIndex: 0, bpm: 120, secondsPerBeat: 0.5 };
+    }
+
+    const events = [];
+    const tracks = config.trackIndex === -1 
+        ? midiData.tracks 
+        : [midiData.tracks[config.trackIndex] || midiData.tracks[0]];
+
+    // Get tempo (BPM) from MIDI or override
+    let bpm = config.bpmOverride > 0 ? config.bpmOverride : 120;
+    const tempoEvents = midiData.header.tempos || [];
+    if (tempoEvents.length > 0 && config.bpmOverride === 0) {
+        bpm = tempoEvents[0].bpm;
+    }
+    const secondsPerBeat = 60 / bpm;
+
+    // Collect all note-on events
+    for (const track of tracks) {
+        for (const note of track.notes) {
+            if (note.velocity < config.velocityMin) continue;
+
+            let timeSec = note.time;
+            
+            // Quantize if enabled
+            if (config.quantizeDiv > 0) {
+                const quantizeUnit = secondsPerBeat / config.quantizeDiv;
+                timeSec = Math.round(timeSec / quantizeUnit) * quantizeUnit;
+            }
+
+            // Map pitch to lane row
+            let laneRow = 0; // top
+            if (note.midi < config.lowCut) {
+                laneRow = 2; // bottom
+            } else if (note.midi < config.highCut) {
+                laneRow = 1; // middle
+            }
+
+            // Map velocity to hazard type (0=diamond, 1=square, 2=triangle)
+            let hazardType = 0;
+            if (note.velocity > 0.66) {
+                hazardType = 2; // triangle (high velocity)
+            } else if (note.velocity > 0.33) {
+                hazardType = 1; // square (mid velocity)
+            }
+
+            events.push({
+                timeSec,
+                laneRow,
+                hazardType,
+                pitch: note.midi,
+                velocity: note.velocity,
+                source: 'midi'
+            });
+        }
+    }
+
+    // Sort by time
+    events.sort((a, b) => a.timeSec - b.timeSec);
+
+    // Apply density filter (skip events based on density ratio)
+    if (config.density !== undefined && config.density < 1.0 && config.density > 0) {
+        const densityFiltered = [];
+        const originalCount = events.length;
+        const step = 1 / config.density; // e.g., density=0.5 -> step=2 (keep every 2nd)
+        
+        for (let i = 0; i < events.length; i++) {
+            // Keep event if it's at a step boundary
+            const keepEvent = (i % Math.round(step)) === 0;
+            if (keepEvent) {
+                densityFiltered.push(events[i]);
+            }
+        }
+        events.length = 0;
+        events.push(...densityFiltered);
+        console.log(`>> Density filter (${config.density}) reduced events from ${originalCount} to ${events.length}`);
+    }
+
+    // Apply max events per second cap
+    if (config.maxEventsPerSec > 0) {
+        const filtered = [];
+        let lastTime = -1;
+        const minInterval = 1 / config.maxEventsPerSec;
+        for (const evt of events) {
+            if (evt.timeSec - lastTime >= minInterval || lastTime < 0) {
+                filtered.push(evt);
+                lastTime = evt.timeSec;
+            }
+        }
+        events.length = 0;
+        events.push(...filtered);
+    }
+
+    console.log(`>> Built ${events.length} MIDI events, BPM: ${bpm.toFixed(1)}`);
+    if (events.length === 0) {
+        console.warn(">> WARNING: No MIDI events generated! Check velocityMin and other filters.");
+    }
+
+    return {
+        midi: midiData,
+        events,
+        nextIndex: 0,
+        bpm,
+        secondsPerBeat
+    };
+}

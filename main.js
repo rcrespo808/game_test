@@ -70,7 +70,7 @@ function importStageConfig(file, callback) {
     reader.readAsText(file);
 }
 
-class RunnerScene extends Phaser.Scene {
+class RunnerScene extends window.Phaser.Scene {
     constructor() {
         super({ key: 'RunnerScene' });
     }
@@ -726,7 +726,7 @@ class RunnerScene extends Phaser.Scene {
 
         const config = this.stageConfig.params;
         const baseY = this.lanes[evt.laneRow];
-        const offset = Phaser.Math.Between(-config.laneJitter, config.laneJitter);
+        const offset = window.Phaser.Math.Between(-config.laneJitter, config.laneJitter);
         const y = baseY + offset;
 
         // Determine spawn side
@@ -739,7 +739,7 @@ class RunnerScene extends Phaser.Scene {
             this.sideAlternator = !this.sideAlternator;
             fromLeft = this.sideAlternator;
         } else { // random
-            fromLeft = Phaser.Math.Between(0, 1) === 0;
+            fromLeft = window.Phaser.Math.Between(0, 1) === 0;
         }
 
         const spawnX = fromLeft ? -60 : this.width + 60;
@@ -816,7 +816,7 @@ class RunnerScene extends Phaser.Scene {
             }
 
             // Collision
-            const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, h.x, h.y);
+            const dist = window.Phaser.Math.Distance.Between(this.player.x, this.player.y, h.x, h.y);
             if (dist < 36) {
                 this.handlePlayerHit();
             }
@@ -960,18 +960,18 @@ class RunnerScene extends Phaser.Scene {
 
     handleInput() {
         let moved = false;
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
+        if (window.Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
             this.currentLaneIndex = Math.max(0, this.currentLaneIndex - 1);
             moved = true;
-        } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
+        } else if (window.Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
             this.currentLaneIndex = Math.min(2, this.currentLaneIndex + 1);
             moved = true;
         }
 
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
+        if (window.Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
             this.currentColumnIndex = Math.max(0, this.currentColumnIndex - 1);
             moved = true;
-        } else if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
+        } else if (window.Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
             this.currentColumnIndex = Math.min(2, this.currentColumnIndex + 1);
             moved = true;
         }
@@ -1142,14 +1142,14 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // Initialize game in browser environment
-if (typeof window !== 'undefined' && typeof Phaser !== 'undefined') {
+if (typeof window !== 'undefined' && typeof window.Phaser !== 'undefined') {
     const config = {
-        type: Phaser.AUTO,
+        type: window.Phaser.AUTO,
         width: 800,
         height: 600,
         backgroundColor: "#111111",
         scene: [RunnerScene]
     };
 
-    const game = new Phaser.Game(config);
+    const game = new window.Phaser.Game(config);
 }
