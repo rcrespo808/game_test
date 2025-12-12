@@ -26,9 +26,15 @@ export function buildMIDIEvents(midiData, config) {
     }
 
     const events = [];
-    const tracks = config.trackIndex === -1 
-        ? midiData.tracks 
-        : [midiData.tracks[config.trackIndex] || midiData.tracks[0]];
+    let tracks;
+    if (config.trackIndex === -1) {
+        // Use all tracks
+        tracks = midiData.tracks;
+    } else {
+        // Use specific track, with bounds checking
+        const trackIndex = Math.max(0, Math.min(config.trackIndex, midiData.tracks.length - 1));
+        tracks = [midiData.tracks[trackIndex]];
+    }
 
     // Get tempo (BPM) from MIDI or override
     let bpm = config.bpmOverride > 0 ? config.bpmOverride : 120;
