@@ -1,6 +1,6 @@
-# 3x3 Grid Runner
+# Grid Runner
 
-A minimalist Phaser 3 game with a 3x3 grid, sliding triangle hazards, and geometric aesthetics.
+A rhythm-based grid runner game built with Phaser 3, where players navigate a grid while avoiding hazards that spawn in sync with MIDI music. Features dynamic difficulty settings and MIDI-driven gameplay.
 
 ## How to Run
 
@@ -48,18 +48,40 @@ npm run test:coverage
 
 See `tests/README.md` for more detailed testing documentation.
 
+## Game Features
+
+### Menu System
+- **MIDI File Selection**: Choose from available MIDI tracks
+- **Difficulty Selection**: Four difficulty levels (Easy, Normal, Hard, Extreme)
+  - Each difficulty has independent game settings (hazard speed, density, grid size, etc.)
+  - Settings are stored in `src/config/gameConfig.js` (not generated)
+- **Visual Feedback**: Difficulty buttons show color-coded indicators with hover states
+
+### Core Gameplay
+- **MIDI-Driven**: Hazards and events spawn based on MIDI note events
+- **Grid Navigation**: Player moves on a configurable grid (3x3 to 5x5)
+- **Hazard System**: Moving hazards that spawn from the sides
+- **Hotspot System**: Green (safe) and red (danger) hotspots that appear on grid cells
+- **Audio Playback**: Real-time MIDI audio playback using Tone.js
+
+### Configuration System
+- **Difficulty Presets**: Predefined settings stored in code (`src/config/gameConfig.js`)
+- **Game Settings**: Hazard speed, density, lookahead, grid size, and more
+- **Config Persistence**: Game configurations saved to localStorage
+- **Editor UI**: In-game editor for fine-tuning settings (press 'E' key)
+
 ## Adding MIDI Files
 
 To add new MIDI files to the game:
 
 1. Place `.mid` files in the `assets/midi/` directory
 2. Run `npm run generate-midi-manifest` to automatically update the MIDI manifest
-3. Run `npm run generate-stage-manifest` to automatically generate stage configurations
-4. The new MIDI files and stage configurations will appear in the menu
+3. The new MIDI files will appear in the menu with all difficulty options
 
-### Manually Editing Manifests
+### MIDI Manifest Format
 
-**MIDI Manifest** (`assets/midi/manifest.json`):
+The MIDI manifest (`assets/midi/manifest.json`) is automatically generated but can be manually edited:
+
 ```json
 {
   "midiFiles": [
@@ -72,20 +94,34 @@ To add new MIDI files to the game:
 }
 ```
 
-**Stage Manifest** (`assets/stages/manifest.json`):
-```json
-{
-  "stages": [
-    {
-      "id": "your_track_easy",
-      "name": "Your Track - Easy",
-      "description": "Easy difficulty preset",
-      "midiPath": "assets/midi/your-file.mid",
-      "trackIndex": -1,
-      "difficulty": "easy"
-    }
-  ]
-}
+### Difficulty Configuration
+
+Difficulty settings are defined in `src/config/gameConfig.js`. Each difficulty includes:
+- Hazard speed
+- Note density (0.0-1.0)
+- Lookahead time
+- Maximum events per second
+- Lane jitter
+- Grid size (rows × columns)
+
+## Project Structure
+
+```
+src/
+├── config/          # Configuration management
+│   ├── gameConfig.js    # Difficulty presets and game settings
+│   └── stageConfig.js   # Default config and persistence
+├── audio/           # Audio playback management
+├── midi/            # MIDI file handling and processing
+├── game/            # Core game systems
+│   ├── MenuScene.js     # Pre-game menu (MIDI + difficulty selection)
+│   ├── RunnerScene.js   # Main game scene
+│   ├── grid.js          # Grid positioning
+│   ├── player.js        # Player movement
+│   ├── hazards.js       # Hazard spawning and collision
+│   └── hotspots.js      # Hotspot management
+└── ui/              # User interface
+    └── editor.js        # In-game editor overlay
 ```
 
-The stage manifest defines preset configurations that appear in the "PRESETS" mode of the menu. Each MIDI file automatically gets stage configurations for easy, normal, and hard difficulties when using the generate script.
+See `src/README.md` for detailed module documentation.

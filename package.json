@@ -1,7 +1,7 @@
 {
   "name": "3x3-grid-runner",
   "version": "1.0.0",
-  "description": "A minimalist Phaser 3 game with a 3x3 grid, sliding triangle hazards, and geometric aesthetics",
+  "description": "A rhythm-based grid runner game built with Phaser 3, featuring MIDI-driven gameplay with configurable difficulty settings",
   "main": "main.js",
   "scripts": {
     "test": "jest",
@@ -15,8 +15,13 @@
   },
   "keywords": [
     "phaser",
+    "phaser3",
     "game",
-    "javascript"
+    "javascript",
+    "midi",
+    "rhythm-game",
+    "grid-runner",
+    "browser-game"
   ],
   "author": "",
   "license": "ISC",

@@ -8,13 +8,16 @@ The game code has been refactored from a single large `main.js` file (1156 lines
 ```
 src/
 ├── config/
+│   ├── gameConfig.js         # Difficulty presets and game settings
 │   └── stageConfig.js        # Stage configuration management (load, save, export, import)
 ├── audio/
 │   └── audioManager.js       # Audio playback management using Tone.js
 ├── midi/
 │   ├── midiLoader.js         # MIDI file loading from filesystem
+│   ├── midiManifest.js       # MIDI manifest management
 │   └── midiProcessor.js      # MIDI data processing and event generation
 ├── game/
+│   ├── MenuScene.js          # Pre-game menu (MIDI + difficulty selection)
 │   ├── RunnerScene.js        # Main Phaser scene (orchestrator)
 │   ├── grid.js               # Grid positioning and cell calculations
 │   ├── player.js             # Player movement and input handling
@@ -29,10 +32,13 @@ main.js                        # Entry point (now just initializes Phaser)
 ## Changes Made
 
 ### Module Extraction
-1. **Config Module** (`src/config/stageConfig.js`)
-   - Extracted all stage configuration functions
-   - Handles localStorage persistence
-   - JSON import/export functionality
+1. **Config Modules** (`src/config/`)
+   - **gameConfig.js**: Difficulty presets with game settings (Easy, Normal, Hard, Extreme)
+     - Settings stored in code, not generated
+     - Each difficulty is independent configuration
+   - **stageConfig.js**: Default config and persistence
+     - Handles localStorage persistence
+     - JSON import/export functionality
 
 2. **Audio Module** (`src/audio/audioManager.js`)
    - Created `AudioManager` class
@@ -40,10 +46,13 @@ main.js                        # Entry point (now just initializes Phaser)
    - Manages audio state and volume
 
 3. **MIDI Modules** (`src/midi/`)
+   - **midiManifest.js**: MIDI file manifest management
    - Separated loading (`midiLoader.js`) from processing (`midiProcessor.js`)
    - Processing module handles event generation and filtering
 
 4. **Game System Modules** (`src/game/`)
+   - **MenuScene**: Pre-game menu for MIDI file and difficulty selection
+   - **RunnerScene**: Main game scene orchestrator
    - **GridManager**: Grid calculations and positioning
    - **PlayerManager**: Player movement, input, positioning
    - **HazardManager**: Hazard lifecycle and collision detection
@@ -57,6 +66,16 @@ main.js                        # Entry point (now just initializes Phaser)
    - Now orchestrates all systems
    - Much cleaner and focused on coordination
    - Reduced from 1156 lines to ~250 lines
+
+### Recent Refactoring (Menu System)
+
+7. **Menu System Refactor**
+   - Removed legacy stage manifest system
+   - Replaced with MIDI file + difficulty selection
+   - Difficulty settings stored in `gameConfig.js` (not generated)
+   - Menu shows MIDI files with difficulty buttons for each
+   - Removed stage manifest generation scripts
+   - Simplified configuration flow
 
 ### Entry Point
 - `main.js` is now a simple entry point that imports `RunnerScene` and initializes Phaser
