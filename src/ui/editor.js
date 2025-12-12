@@ -22,6 +22,10 @@ export class EditorUI {
     setup() {
         const editor = document.getElementById('editor');
         const toggleBtn = document.getElementById('editorToggle');
+        if (!editor || !toggleBtn) {
+            console.warn('Editor UI elements not found, skipping setup');
+            return;
+        }
         const config = this.scene.stageConfig.params;
 
         // Populate track index selector
@@ -117,6 +121,7 @@ export class EditorUI {
      */
     bindSaveButton() {
         const saveBtn = document.getElementById('saveBtn');
+        if (!saveBtn) return;
         // Remove any existing listeners by cloning
         const newSaveBtn = saveBtn.cloneNode(true);
         saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
@@ -140,7 +145,8 @@ export class EditorUI {
             if (this.scene.onStageConfigUpdated) {
                 this.scene.onStageConfigUpdated();
             }
-            document.getElementById('editor').classList.toggle('visible');
+            const editorEl = document.getElementById('editor');
+            if (editorEl) editorEl.classList.toggle('visible');
         });
     }
 
@@ -148,7 +154,9 @@ export class EditorUI {
      * Bind reset button handler
      */
     bindResetButton() {
-        document.getElementById('resetBtn').addEventListener('click', () => {
+        const resetBtn = document.getElementById('resetBtn');
+        if (!resetBtn) return;
+        resetBtn.addEventListener('click', () => {
             if (confirm('Reset to defaults?')) {
                 this.scene.stageConfig = { 
                     ...DEFAULT_STAGE_CONFIG, 
@@ -168,7 +176,9 @@ export class EditorUI {
      * Bind export button handler
      */
     bindExportButton() {
-        document.getElementById('exportBtn').addEventListener('click', () => {
+        const exportBtn = document.getElementById('exportBtn');
+        if (!exportBtn) return;
+        exportBtn.addEventListener('click', () => {
             exportStageConfig(this.scene.stageConfig);
         });
     }
@@ -177,11 +187,16 @@ export class EditorUI {
      * Bind import button handler
      */
     bindImportButton() {
-        document.getElementById('importBtn').addEventListener('click', () => {
-            document.getElementById('importFile').click();
+        const importBtn = document.getElementById('importBtn');
+        if (!importBtn) return;
+        importBtn.addEventListener('click', () => {
+            const importFile = document.getElementById('importFile');
+            if (importFile) importFile.click();
         });
 
-            document.getElementById('importFile').addEventListener('change', (e) => {
+        const importFile = document.getElementById('importFile');
+        if (importFile) {
+            importFile.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     importStageConfig(file, (config) => {
@@ -205,7 +220,8 @@ export class EditorUI {
                     });
                 });
             }
-        });
+            });
+        }
     }
 
     /**
