@@ -105,7 +105,7 @@ export class EditorUI {
         if (!trackSelect) return;
         
         // Clear existing options
-        trackSelect.innerHTML = '<option value="-1">All Tracks</option>';
+        trackSelect.innerHTML = '<option value="-1">All Tracks (combine all tracks)</option>';
         
         if (this.scene.midiData && this.scene.midiData.tracks) {
             for (let i = 0; i < this.scene.midiData.tracks.length; i++) {
@@ -136,6 +136,9 @@ export class EditorUI {
             const savedIndex = this.scene.stageConfig.params.trackIndex;
             if (savedIndex !== undefined && savedIndex >= -1 && savedIndex < this.scene.midiData.tracks.length) {
                 trackSelect.value = savedIndex;
+                this.updateTrackInfo(savedIndex);
+            } else {
+                this.updateTrackInfo(-1);
             }
         } else {
             // MIDI data not loaded yet, show placeholder
@@ -144,6 +147,56 @@ export class EditorUI {
             opt.textContent = "Load MIDI file first";
             opt.disabled = true;
             trackSelect.appendChild(opt);
+            this.hideTrackInfo();
+        }
+    }
+
+    /**
+     * Update track information display
+     */
+    updateTrackInfo(trackIndex) {
+        const trackInfo = document.getElementById('trackInfo');
+        const trackInfoText = document.getElementById('trackInfoText');
+        
+        if (!trackInfo || !trackInfoText) return;
+        
+        if (trackIndex === -1) {
+            if (this.scene.midiData && this.scene.midiData.tracks) {
+                const totalNotes = this.scene.midiData.tracks.reduce((sum, track) => {
+                    return sum + (track.notes ? track.notes.length : 0);
+                }, 0);
+                trackInfoText.textContent = `All ${this.scene.midiData.tracks.length} tracks (${totalNotes} total notes)`;
+                trackInfo.style.display = 'block';
+            } else {
+                this.hideTrackInfo();
+            }
+        } else if (this.scene.midiData && this.scene.midiData.tracks[trackIndex]) {
+            const track = this.scene.midiData.tracks[trackIndex];
+            let info = `Track ${trackIndex}`;
+            
+            if (track.name) {
+                info += `: "${track.name}"`;
+            }
+            if (track.instrument && track.instrument.name) {
+                info += ` | Instrument: ${track.instrument.name}`;
+            }
+            const noteCount = track.notes ? track.notes.length : 0;
+            info += ` | Notes: ${noteCount}`;
+            
+            trackInfoText.textContent = info;
+            trackInfo.style.display = 'block';
+        } else {
+            this.hideTrackInfo();
+        }
+    }
+
+    /**
+     * Hide track information display
+     */
+    hideTrackInfo() {
+        const trackInfo = document.getElementById('trackInfo');
+        if (trackInfo) {
+            trackInfo.style.display = 'none';
         }
     }
 
@@ -171,6 +224,8 @@ export class EditorUI {
             midiSelect.value = this.scene.stageConfig.midiPath || '';
         }
         safeSetValue('trackIndex', config.trackIndex);
+        // Update track info display
+        this.updateTrackInfo(config.trackIndex !== undefined ? config.trackIndex : -1);
         safeSetValue('bpmOverride', config.bpmOverride);
         safeSetValue('lookaheadSec', config.lookaheadSec);
         safeSetValue('quantizeDiv', config.quantizeDiv);
@@ -363,6 +418,10 @@ export class EditorUI {
         if (trackSelect) {
             trackSelect.addEventListener('change', (e) => {
                 const selectedTrack = parseInt(e.target.value) || -1;
+                
+                // Update track info display
+                this.updateTrackInfo(selectedTrack);
+                
                 if (selectedTrack !== this.scene.stageConfig.params.trackIndex) {
                     // Update config immediately
                     this.scene.stageConfig.params.trackIndex = selectedTrack;
@@ -371,7 +430,9 @@ export class EditorUI {
                     // Rebuild MIDI events with new track selection
                     if (this.scene.midiData) {
                         this.scene.buildMIDIEvents();
-                        console.log(">> Track selection changed to:", selectedTrack === -1 ? "All Tracks" : `Track ${selectedTrack}`);
+                        const trackName = selectedTrack === -1 ? "All Tracks" : 
+                            (this.scene.midiData.tracks[selectedTrack]?.name || `Track ${selectedTrack}`);
+                        console.log(">> Track selection changed to:", trackName);
                     }
                 }
             });
