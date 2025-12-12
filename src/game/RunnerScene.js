@@ -86,6 +86,7 @@ export class RunnerScene extends window.Phaser.Scene {
         };
         this.trackBPM = trackData.bpm;
         this.secondsPerBeat = trackData.secondsPerBeat;
+        this.songDuration = trackData.songDuration || 0;
     }
 
     create() {
@@ -117,6 +118,8 @@ export class RunnerScene extends window.Phaser.Scene {
 
         // MIDI Track State
         this.trackStartMs = null;
+        this.songDuration = 0;
+        this.songCompleted = false;
         if (!this.track) {
             this.track = { events: [], nextIndex: 0 };
         }
@@ -149,10 +152,48 @@ export class RunnerScene extends window.Phaser.Scene {
             this.startGame();
         });
 
-        this.scoreText = this.add.text(16, 16, "Score: 0", {
+        this.scoreText = this.add.text(16, 40, "Score: 0", {
             fontSize: "20px",
             color: "#ffffff"
         }).setDepth(20);
+
+        // Progress bar
+        const progressBarHeight = 8;
+        const progressBarY = 10;
+        const progressBarWidth = width - 40;
+        const progressBarX = 20;
+        
+        // Background bar
+        this.progressBarBg = this.add.rectangle(
+            progressBarX + progressBarWidth / 2,
+            progressBarY + progressBarHeight / 2,
+            progressBarWidth,
+            progressBarHeight,
+            0x333333
+        ).setDepth(20);
+
+        // Progress bar fill
+        this.progressBarFill = this.add.rectangle(
+            progressBarX,
+            progressBarY + progressBarHeight / 2,
+            0,
+            progressBarHeight,
+            0x0ff
+        ).setOrigin(0, 0.5).setDepth(21);
+
+        // Victory message (hidden initially)
+        this.victoryText = this.add.text(width / 2, height / 2 - 50, "VICTORY!", {
+            fontSize: "48px",
+            color: "#0ff",
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(200).setVisible(false);
+
+        this.victoryScoreText = this.add.text(width / 2, height / 2 + 10, "", {
+            fontSize: "24px",
+            color: "#fff",
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(200).setVisible(false);
 
         // Editor UI Setup (async - loads MIDI manifest)
         this.editorUI = new EditorUI(this);
@@ -246,6 +287,11 @@ export class RunnerScene extends window.Phaser.Scene {
                 this.track = { events: [], nextIndex: 0 };
             }
 
+            // Reset song completion state
+            this.songCompleted = false;
+            this.victoryText.setVisible(false);
+            this.victoryScoreText.setVisible(false);
+
             // Ensure MIDI is loaded before starting audio; if not, wait for it
             if (this.midiLoadPromise) {
                 try {
@@ -313,7 +359,22 @@ export class RunnerScene extends window.Phaser.Scene {
             `FPS: ${(1000 / delta).toFixed(0)}`
         );
 
-        if (this.isDead || !this.isRunning) return;
+        // Update progress bar
+        if (this.isRunning && this.songDuration > 0) {
+            const progress = Math.min(1, trackTime / this.songDuration);
+            const progressBarWidth = (this.width - 40) * progress;
+            this.progressBarFill.width = progressBarWidth;
+
+            // Check if song completed
+            if (progress >= 1 && !this.songCompleted) {
+                this.handleSongComplete();
+            }
+        } else if (!this.isRunning) {
+            // Reset progress bar when not running
+            this.progressBarFill.width = 0;
+        }
+
+        if (this.isDead || !this.isRunning || this.songCompleted) return;
 
         // 1. Player Input
         const { lane, column } = this.playerManager.handleInput(this.cursors);
@@ -373,6 +434,35 @@ export class RunnerScene extends window.Phaser.Scene {
         this.handlePlayerHit();
     }
 
+    handleSongComplete() {
+        if (this.songCompleted || this.isDead) return;
+        
+        this.songCompleted = true;
+        this.isRunning = false;
+
+        // Stop audio
+        this.audioManager.stopAudio();
+
+        // Show victory message
+        this.victoryText.setVisible(true);
+        this.victoryScoreText.setText(`Final Score: ${this.greenScore}`).setVisible(true);
+
+        // Fade in animation
+        this.victoryText.setAlpha(0);
+        this.victoryScoreText.setAlpha(0);
+        this.tweens.add({
+            targets: [this.victoryText, this.victoryScoreText],
+            alpha: 1,
+            duration: 500,
+            ease: "Power2"
+        });
+
+        // Return to menu after delay
+        this.time.delayedCall(3000, () => {
+            this.returnToMenu();
+        });
+    }
+
     handlePlayerHit() {
         if (this.isDead) return;
         this.isDead = true;
@@ -399,6 +489,11 @@ export class RunnerScene extends window.Phaser.Scene {
         });
     }
 
+    async returnToMenu() {
+        await this.audioManager.stopAudio();
+        this.scene.start('MenuScene');
+    }
+
     showRestartButton() {
         this.restartText = this.add.text(
             this.width / 2,
@@ -408,9 +503,7 @@ export class RunnerScene extends window.Phaser.Scene {
         ).setOrigin(0.5).setDepth(100).setInteractive({ useHandCursor: true });
 
         this.restartText.on("pointerdown", async () => {
-            await this.audioManager.stopAudio();
-            // Return to menu instead of restarting
-            this.scene.start('MenuScene');
+            await this.returnToMenu();
         });
     }
 

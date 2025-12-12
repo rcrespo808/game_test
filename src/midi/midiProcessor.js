@@ -22,7 +22,7 @@ function mapPitchToLane(midiValue, config) {
  */
 export function buildMIDIEvents(midiData, config) {
     if (!midiData) {
-        return { events: [], nextIndex: 0, bpm: 120, secondsPerBeat: 0.5 };
+        return { events: [], nextIndex: 0, bpm: 120, secondsPerBeat: 0.5, songDuration: 0 };
     }
 
     const events = [];
@@ -120,11 +120,24 @@ export function buildMIDIEvents(midiData, config) {
         console.warn(">> WARNING: No MIDI events generated! Check velocityMin and other filters.");
     }
 
+    // Calculate song duration from last event or MIDI duration
+    let songDuration = 0;
+    if (events.length > 0) {
+        // Use the last event's time as the song duration
+        songDuration = events[events.length - 1].timeSec;
+        // Add a small buffer (e.g., 2 seconds) after last event
+        songDuration += 2;
+    } else if (midiData.duration !== undefined) {
+        // Use MIDI duration if available
+        songDuration = midiData.duration;
+    }
+
     return {
         midi: midiData,
         events,
         nextIndex: 0,
         bpm,
-        secondsPerBeat
+        secondsPerBeat,
+        songDuration
     };
 }
