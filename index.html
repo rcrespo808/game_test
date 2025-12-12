@@ -20,14 +20,234 @@
         canvas {
             display: block;
         }
+
+        /* Editor Overlay */
+        #editor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 20px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+        }
+
+        #editor.visible {
+            display: block;
+        }
+
+        #editor h2 {
+            margin-top: 0;
+            color: #0ff;
+        }
+
+        #editor .section {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 4px;
+        }
+
+        #editor .section h3 {
+            margin-top: 0;
+            color: #ff0;
+            font-size: 14px;
+        }
+
+        #editor label {
+            display: block;
+            margin: 8px 0 4px 0;
+            color: #ccc;
+        }
+
+        #editor input[type="text"],
+        #editor input[type="number"],
+        #editor select {
+            width: 200px;
+            padding: 4px;
+            background: #222;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 2px;
+        }
+
+        #editor button {
+            padding: 8px 16px;
+            margin: 4px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #editor button:hover {
+            background: #444;
+        }
+
+        #editor button.primary {
+            background: #0a5;
+        }
+
+        #editor button.primary:hover {
+            background: #0c7;
+        }
+
+        #editor .button-group {
+            margin-top: 10px;
+        }
+
+        #editorToggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 999;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        #editorToggle:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
     </style>
 </head>
 
 <body>
+    <!-- Editor Toggle Button -->
+    <button id="editorToggle">Editor (E)</button>
+
+    <!-- Editor Overlay -->
+    <div id="editor">
+        <h2>Track Editor</h2>
+        
+        <div class="section">
+            <h3>Track Selection</h3>
+            <label>MIDI File:</label>
+            <input type="text" id="midiPath" readonly>
+            <label>Track Index:</label>
+            <select id="trackIndex">
+                <option value="-1">All Tracks</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <h3>Timing</h3>
+            <label>BPM Override (0 = use MIDI):</label>
+            <input type="number" id="bpmOverride" min="0" step="1">
+            <label>Lookahead (seconds):</label>
+            <input type="number" id="lookaheadSec" min="0.01" max="1" step="0.01">
+            <label>Quantize Division:</label>
+            <select id="quantizeDiv">
+                <option value="0">Off</option>
+                <option value="4">1/4</option>
+                <option value="8">1/8</option>
+                <option value="16">1/16</option>
+                <option value="32">1/32</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <h3>Event Filtering</h3>
+            <label>Density (0.1-1.0): <span id="densityDisplay">1.0</span></label>
+            <input type="range" id="densitySlider" min="0.1" max="1.0" step="0.05" value="1.0" style="width: 200px;">
+            <input type="number" id="density" min="0.1" max="1.0" step="0.05" value="1.0" style="width: 80px; margin-left: 10px;">
+            <small style="color: #888; display: block; margin-top: 2px;">1.0 = all notes, 0.5 = every other, 0.25 = every 4th</small>
+            <label>Velocity Min (0-1):</label>
+            <input type="number" id="velocityMin" min="0" max="1" step="0.01">
+            <label>Max Events Per Second:</label>
+            <input type="number" id="maxEventsPerSec" min="1" step="1">
+        </div>
+
+        <div class="section">
+            <h3>Lane Mapping</h3>
+            <label>Low Cut Pitch:</label>
+            <input type="number" id="lowCut" min="0" max="127" step="1">
+            <label>High Cut Pitch:</label>
+            <input type="number" id="highCut" min="0" max="127" step="1">
+        </div>
+
+        <div class="section">
+            <h3>Hazard Params</h3>
+            <label>Speed (px/s):</label>
+            <input type="number" id="hazardSpeed" min="100" max="1000" step="10">
+            <label>Side Mode:</label>
+            <select id="sideMode">
+                <option value="random">Random</option>
+                <option value="alternate">Alternate</option>
+                <option value="left">Left Only</option>
+                <option value="right">Right Only</option>
+            </select>
+            <label>Lane Jitter (px):</label>
+            <input type="number" id="laneJitter" min="0" max="30" step="1">
+        </div>
+
+        <div class="section">
+            <h3>Hotspot Params</h3>
+            <label>Green Every N Beats:</label>
+            <input type="number" id="greenEveryBeats" min="1" step="1">
+            <label>Red Every N Subdivisions:</label>
+            <input type="number" id="redEverySubdiv" min="1" step="1">
+            <label>Cell Seed A:</label>
+            <input type="number" id="seedA" min="1" step="1">
+            <label>Cell Seed B:</label>
+            <input type="number" id="seedB" min="0" step="1">
+        </div>
+
+        <div class="section">
+            <h3>Audio</h3>
+            <label>
+                <input type="checkbox" id="enableAudio" checked>
+                Enable MIDI Audio Playback
+            </label>
+            <label>Volume:</label>
+            <input type="range" id="audioVolume" min="0" max="100" value="70" step="1">
+            <span id="volumeDisplay">70%</span>
+        </div>
+
+        <div class="section">
+            <h3>Stage Persistence</h3>
+            <div class="button-group">
+                <button class="primary" id="saveBtn">Save</button>
+                <button id="resetBtn">Reset</button>
+                <button id="exportBtn">Export Stage</button>
+                <button id="importBtn">Import Stage</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
+        </div>
+    </div>
+
     <!-- Phaser 3 via CDN -->
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <!-- MIDI Parser and Tone.js via CDN (ESM) -->
+    <script type="module">
+        // Import MIDI parser and Tone.js dynamically
+        Promise.all([
+            import('https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.28/+esm'),
+            import('https://cdn.jsdelivr.net/npm/tone@14.7.77/+esm')
+        ]).then(([midiModule, toneModule]) => {
+            window.MidiParser = midiModule.Midi;
+            window.Tone = toneModule.Tone || toneModule.default?.Tone || toneModule;
+            console.log('>> MIDI parser and Tone.js loaded', { Tone: !!window.Tone, MidiParser: !!window.MidiParser });
+        }).catch(err => {
+            console.error('Failed to load MIDI/Tone libraries:', err);
+            window.MidiParser = null;
+            window.Tone = null;
+        });
+    </script>
     <!-- Game Logic -->
-    <script src="main.js?v=8"></script>
+    <script src="main.js?v=9"></script>
 </body>
 
 </html>
