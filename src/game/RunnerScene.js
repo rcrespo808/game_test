@@ -11,6 +11,7 @@ import { GridManager } from './grid.js';
 import { PlayerManager } from './player.js';
 import { HazardManager } from './hazards.js';
 import { HotspotManager } from './hotspots.js';
+import { setupHazardAnimations } from './spriteAnimations.js';
 export class RunnerScene extends window.Phaser.Scene {
     constructor() {
         super({ key: 'RunnerScene' });
@@ -28,12 +29,10 @@ export class RunnerScene extends window.Phaser.Scene {
     }
 
     preload() {
-        // ASSET MANAGEMENT: Generate Texture
-        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-        graphics.fillStyle(0xff4444);
-        graphics.fillRect(0, 0, 40, 40);
-        graphics.generateTexture('hazard_texture', 40, 40);
-        console.log(">> Texture 'hazard_texture' generated");
+        // Load sprite sheets
+        this.load.image('hazzards_sheet', 'assets/graphics/hazzards.png');
+        this.load.image('sprites_sheet', 'assets/graphics/sprites.png');
+        console.log(">> Loading sprite sheets");
 
         // Initialize track as empty (will be populated when MIDI loads)
         this.track = { events: [], nextIndex: 0 };
@@ -84,6 +83,10 @@ export class RunnerScene extends window.Phaser.Scene {
 
         this.width = width;
         this.height = height;
+
+        // Setup sprite animations
+        setupHazardAnimations(this, 'hazzards_sheet');
+        this.setupPlayerAnimations();
 
         // Initialize managers
         this.gridManager = new GridManager(width, height, this.stageConfig.params);
@@ -184,6 +187,67 @@ export class RunnerScene extends window.Phaser.Scene {
 
         // Debug Text
         this.debugText = this.add.text(10, 10, "Debug Modular", { fontSize: '12px', fill: '#0f0' });
+    }
+
+    setupPlayerAnimations() {
+        console.log(">> Setting up player animations...");
+        
+        if (!this.textures.exists('sprites_sheet')) {
+            console.error(">> ERROR: sprites_sheet texture not found!");
+            return;
+        }
+        
+        const texture = this.textures.get('sprites_sheet');
+        console.log(`>> Texture found: ${texture.width}x${texture.height}`);
+        
+        // Player frame coordinates: 16x16 squares, center-to-center spacing
+        // Rectangle spanning two adjacent sprite centers = 26*2 = 52px
+        // This means: from 8px before center1 to 8px after center2 = 52px
+        // So: 8 + (center-to-center) + 8 = 52
+        // Center-to-center = 52 - 16 = 36px
+        // 
+        // Starting from f0: if we know the actual center position, we can calculate all frames
+        // To prevent left drift, we need to ensure all frames have the same center offset
+        // If f0 center is at (196+8, 52+8) = (204, 60), then:
+        // f1 center: (204+36, 60) = (240, 60), top-left: (240-8, 60-8) = (232, 52)
+        // f2 center: (240+36, 60) = (276, 60), top-left: (276-8, 60-8) = (268, 52)
+        // f3 center: (276+36, 60) = (312, 60), top-left: (312-8, 60-8) = (304, 52)
+        // f4 center: (312+36, 60) = (348, 60), top-left: (348-8, 60-8) = (340, 52)
+        // f5 center: (348+36, 60) = (384, 60), top-left: (384-8, 60-8) = (376, 52)
+        // f6 center: (384+36, 60) = (420, 60), top-left: (420-8, 60-8) = (412, 52)
+        // f7 center: (420+36, 60) = (456, 60), top-left: (456-8, 60-8) = (448, 52)
+        
+        // However, if there's left drift, the actual centers might be offset
+        // Let's use the original f0 position and ensure consistent 36px center-to-center spacing
+        const frameCoords = [
+            { x: 196, y: 52, width: 16, height: 16 },  // f0: center at (204, 60)
+            { x: 232, y: 52, width: 16, height: 16 },  // f1: center at (240, 60), 36px center-to-center
+            { x: 268, y: 52, width: 16, height: 16 },  // f2: center at (276, 60), 36px center-to-center
+            { x: 304, y: 52, width: 16, height: 16 },  // f3: center at (312, 60), 36px center-to-center
+            { x: 340, y: 52, width: 16, height: 16 },  // f4: center at (348, 60), 36px center-to-center
+            { x: 376, y: 52, width: 16, height: 16 },  // f5: center at (384, 60), 36px center-to-center
+            { x: 412, y: 52, width: 16, height: 16 },  // f6: center at (420, 60), 36px center-to-center
+            { x: 448, y: 52, width: 16, height: 16 }   // f7: center at (456, 60), 36px center-to-center
+        ];
+        
+        const frameNames = [];
+        frameCoords.forEach((coords, i) => {
+            const frameName = `sprites_sheet_player_frame_${i}`;
+            texture.add(frameName, 0, coords.x, coords.y, coords.width, coords.height);
+            frameNames.push(frameName);
+            console.log(`>> Player frame ${i} added: ${frameName}`);
+        });
+        
+        // Create animation
+        if (!this.anims.exists('player_anim')) {
+            this.anims.create({
+                key: 'player_anim',
+                frames: frameNames.map(name => ({ key: 'sprites_sheet', frame: name })),
+                frameRate: 10,
+                repeat: -1
+            });
+            console.log(`>> Player animation 'player_anim' created with ${frameNames.length} frames`);
+        }
     }
 
     drawGridLines() {

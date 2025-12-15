@@ -13,8 +13,43 @@ export class PlayerManager {
         const startX = gridManager.getColumnX(this.currentColumnIndex);
         const startY = gridManager.getLaneY(this.currentLaneIndex);
         
+        // Try to create animated sprite, fallback to circle if not available
+        const initialFrame = 'sprites_sheet_player_frame_0';
+        
+        if (scene.textures.exists('sprites_sheet')) {
+            const texture = scene.textures.get('sprites_sheet');
+            
+            if (texture.has(initialFrame)) {
+                // Create animated sprite
+                this.player = scene.add.sprite(startX, startY, 'sprites_sheet', initialFrame);
+                this.player.setDepth(10);
+                
+                // Set origin to center to ensure consistent positioning
+                this.player.setOrigin(0.5, 0.5);
+                
+                // Scale player sprite (original is 16x16, scale to desired size)
+                const scale = 2; // Scale to 32x32 pixels (2x the 16x16 sprite)
+                this.player.setScale(scale);
+                
+                // Play animation if available
+                if (scene.anims.exists('player_anim')) {
+                    this.player.play('player_anim');
+                    console.log('>> Player animated sprite created and animation started');
+                } else {
+                    console.warn('>> Player sprite created but animation not found');
+                }
+                return;
+            } else {
+                console.warn(`>> Frame ${initialFrame} not found, falling back to circle`);
+            }
+        } else {
+            console.warn('>> sprites_sheet texture not found, falling back to circle');
+        }
+        
+        // Fallback: create circle
         this.player = scene.add.circle(startX, startY, 16, 0x00ffff);
         this.player.setDepth(10);
+        console.log('>> Player created as circle (fallback)');
     }
 
     /**
@@ -86,6 +121,11 @@ export class PlayerManager {
         this.currentColumnIndex = this.gridManager.clampColumn(columnIndex);
         const pos = this.gridManager.getGridPosition(this.currentLaneIndex, this.currentColumnIndex);
         this.player.setPosition(pos.x, pos.y);
+        
+        // Ensure animation continues playing after reset
+        if (!this.player.anims.isPlaying || this.player.anims.currentAnim.key !== 'player_anim') {
+            this.player.play('player_anim');
+        }
     }
 
     /**

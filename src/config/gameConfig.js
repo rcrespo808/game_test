@@ -31,7 +31,7 @@ export const DIFFICULTY_CONFIGS = {
             hazardSpeed: 420,
             density: 0.4,
             lookaheadSec: 0.1,
-            maxEventsPerSec: 20,
+            maxEventsPerSec: 17,
             laneJitter: 18,
             gridRows: 3,
             gridCols: 3

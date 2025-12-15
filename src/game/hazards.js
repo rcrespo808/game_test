@@ -38,8 +38,24 @@ export class HazardManager {
         const spawnX = fromLeft ? -60 : this.scene.width + 60;
         const velocityX = fromLeft ? this.config.hazardSpeed : -this.config.hazardSpeed;
 
-        const hazard = this.scene.add.image(spawnX, y, 'hazard_texture');
+        // Create animated sprite with initial frame
+        const initialFrameName = 'hazzards_sheet_frame_0';
+        const hazard = this.scene.add.sprite(spawnX, y, 'hazzards_sheet', initialFrameName);
         hazard.setDepth(5);
+        
+        // Scale sprite (original is 12x9, scale to visible size)
+        // Scale to approximately 40x40 for visibility (maintaining aspect ratio)
+        const scale = 40 / 12; // Scale based on width
+        hazard.setScale(scale);
+        
+        // Mirror sprite horizontally for right-to-left movement
+        if (!fromLeft) {
+            hazard.setFlipX(true);
+        }
+        
+        // Play animation (same for both directions, sprite is mirrored for right-to-left)
+        hazard.play('hazard_anim');
+        
         hazard.vx = velocityX;
         hazard.isHazard = true;
 
@@ -59,9 +75,6 @@ export class HazardManager {
 
             // Motion
             h.x += h.vx * dt;
-
-            // Rotation
-            h.rotation += 2 * dt;
 
             // Cleanup
             if ((h.vx > 0 && h.x > this.scene.width + 100) || 
