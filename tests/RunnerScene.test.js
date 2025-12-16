@@ -192,13 +192,58 @@ describe('RunnerScene', () => {
       scene.create();
     });
 
-    test('should spawn hazards from MIDI events', () => {
+    test('should spawn hazards from MIDI events with tween animations', () => {
       const mockEvent = {
         timeSec: 0.5,
         laneRow: 1,
         hazardType: 0,
         pitch: 60,
         velocity: 0.5
+      };
+
+      // Mock sprite creation
+      const mockSprite = {
+        setDepth: jest.fn().mockReturnThis(),
+        setScale: jest.fn().mockReturnThis(),
+        setAlpha: jest.fn().mockReturnThis(),
+        setFlipX: jest.fn().mockReturnThis(),
+        play: jest.fn().mockReturnThis(),
+        x: 0,
+        y: 0,
+        vx: 0,
+        angle: 0,
+        scale: 0,
+        alpha: 0,
+        isHazard: false,
+        targetScale: 1,
+        destroy: jest.fn()
+      };
+
+      scene.add = {
+        sprite: jest.fn(() => mockSprite)
+      };
+      scene.textures = {
+        get: jest.fn(() => ({
+          has: jest.fn(() => true)
+        }))
+      };
+      scene.anims = {
+        exists: jest.fn(() => true)
+      };
+      scene.tweens = {
+        add: jest.fn((config) => {
+          // Simulate nested tween completion for spawn animation
+          if (config.onComplete) {
+            setTimeout(() => {
+              config.onComplete();
+              // If nested tween is created, simulate its completion too
+              if (config.onComplete && typeof config.onComplete === 'function') {
+                // This handles the rotation return tween
+              }
+            }, 0);
+          }
+          return { remove: jest.fn() };
+        })
       };
 
       scene.track = {
@@ -212,19 +257,27 @@ describe('RunnerScene', () => {
       scene.isDead = false;
       scene.cursors = { up: {}, down: {}, left: {}, right: {} };
       scene.debugText = { setText: jest.fn() };
+      scene.width = 800;
 
       const initialHazardCount = scene.hazardManager.getCount();
       scene.update(0, 1000); // 1 second delta
 
       // Hazard should be spawned when time matches
       expect(scene.track.nextIndex).toBeGreaterThan(0);
+      // Verify spawn animations were set up
+      expect(mockSprite.setScale).toHaveBeenCalledWith(0);
+      expect(mockSprite.setAlpha).toHaveBeenCalledWith(0);
+      expect(scene.tweens.add).toHaveBeenCalled(); // Spawn tween should be added
     });
 
-    test('should remove hazards when they go off screen', () => {
+    test('should remove hazards when they go off screen with tween animation', () => {
       const mockHazard = {
         x: 900, // off screen (width is 800)
         vx: 100,
         rotation: 0,
+        angle: 0,
+        scale: 1,
+        alpha: 1,
         destroy: jest.fn()
       };
 
@@ -236,9 +289,27 @@ describe('RunnerScene', () => {
       scene.trackBPM = 120;
       scene.secondsPerBeat = 0.5;
       scene.debugText = { setText: jest.fn() };
+      scene.tweens = {
+        add: jest.fn((config) => {
+          // Simulate tween completion for testing
+          if (config.onComplete) {
+            config.onComplete();
+          }
+          return { remove: jest.fn() };
+        })
+      };
 
       scene.update(0, 1000);
 
+      // Verify tween was added for destroy animation
+      expect(scene.tweens.add).toHaveBeenCalledWith(
+        expect.objectContaining({
+          targets: mockHazard,
+          scale: 0,
+          alpha: 0
+        })
+      );
+      // Verify destroy was called via tween onComplete
       expect(mockHazard.destroy).toHaveBeenCalled();
     });
   });

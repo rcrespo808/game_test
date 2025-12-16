@@ -22,6 +22,7 @@ const mockPhaser = {
           setInteractive: jest.fn().mockReturnThis(),
           setScale: jest.fn().mockReturnThis(),
           setPosition: jest.fn().mockReturnThis(),
+          setAlpha: jest.fn().mockReturnThis(),
           x: 0,
           y: 0,
           scale: 1,
@@ -49,6 +50,25 @@ const mockPhaser = {
           y: 0,
           vx: 0,
           rotation: 0,
+          destroy: jest.fn()
+        })),
+        sprite: jest.fn(() => ({
+          setDepth: jest.fn().mockReturnThis(),
+          setOrigin: jest.fn().mockReturnThis(),
+          setScale: jest.fn().mockReturnThis(),
+          setAlpha: jest.fn().mockReturnThis(),
+          setFlipX: jest.fn().mockReturnThis(),
+          setPosition: jest.fn().mockReturnThis(),
+          play: jest.fn().mockReturnThis(),
+          x: 0,
+          y: 0,
+          vx: 0,
+          rotation: 0,
+          angle: 0,
+          scale: 1,
+          alpha: 1,
+          isHazard: false,
+          targetScale: 1,
           destroy: jest.fn()
         })),
         line: jest.fn(() => ({
@@ -98,7 +118,27 @@ const mockPhaser = {
         }))
       };
       this.tweens = {
-        add: jest.fn()
+        add: jest.fn((config) => {
+          // Simulate tween completion if onComplete is provided
+          if (config.onComplete) {
+            // Call onComplete immediately for testing
+            setTimeout(() => config.onComplete(), 0);
+          }
+          return { remove: jest.fn() };
+        }),
+        killTweensOf: jest.fn()
+      };
+      this.textures = {
+        get: jest.fn(() => ({
+          has: jest.fn(() => true),
+          add: jest.fn()
+        })),
+        exists: jest.fn(() => true),
+        list: {}
+      };
+      this.anims = {
+        exists: jest.fn(() => true),
+        create: jest.fn()
       };
     }
   },

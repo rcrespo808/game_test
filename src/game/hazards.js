@@ -45,8 +45,11 @@ export class HazardManager {
         
         // Scale sprite (original is 12x9, scale to visible size)
         // Scale to approximately 40x40 for visibility (maintaining aspect ratio)
-        const scale = 40 / 12; // Scale based on width
-        hazard.setScale(scale);
+        const targetScale = 40 / 12; // Scale based on width
+        
+        // Start with scale 0 and alpha 0 for spawn animation
+        hazard.setScale(0);
+        hazard.setAlpha(0);
         
         // Mirror sprite horizontally for right-to-left movement
         if (!fromLeft) {
@@ -56,8 +59,39 @@ export class HazardManager {
         // Play animation (same for both directions, sprite is mirrored for right-to-left)
         hazard.play('hazard_anim');
         
+        // Spawn animation: scale up, fade in, slight rotation
+        this.scene.tweens.add({
+            targets: hazard,
+            scale: targetScale,
+            alpha: 1,
+            angle: fromLeft ? 15 : -15, // Slight rotation based on direction
+            duration: 200,
+            ease: 'Back.easeOut', // Bouncy effect
+            onComplete: () => {
+                // Return rotation to 0 after spawn
+                this.scene.tweens.add({
+                    targets: hazard,
+                    angle: 0,
+                    duration: 150,
+                    ease: 'Sine.easeOut',
+                    onComplete: () => {
+                        // Start subtle pulsing animation after spawn completes
+                        this.scene.tweens.add({
+                            targets: hazard,
+                            scale: targetScale * 1.1,
+                            duration: 800,
+                            ease: 'Sine.easeInOut',
+                            yoyo: true,
+                            repeat: -1
+                        });
+                    }
+                });
+            }
+        });
+        
         hazard.vx = velocityX;
         hazard.isHazard = true;
+        hazard.targetScale = targetScale; // Store for cleanup
 
         this.activeHazards.push(hazard);
         this.hazardSpawnCount++;
@@ -79,7 +113,18 @@ export class HazardManager {
             // Cleanup
             if ((h.vx > 0 && h.x > this.scene.width + 100) || 
                 (h.vx < 0 && h.x < -100)) {
-                h.destroy();
+                // Destroy animation: scale down and fade out
+                this.scene.tweens.add({
+                    targets: h,
+                    scale: 0,
+                    alpha: 0,
+                    angle: h.vx > 0 ? 45 : -45, // Rotate while fading
+                    duration: 150,
+                    ease: 'Power2.easeIn',
+                    onComplete: () => {
+                        h.destroy();
+                    }
+                });
                 this.activeHazards.splice(i, 1);
                 continue;
             }
@@ -103,7 +148,23 @@ export class HazardManager {
      * Clear all hazards
      */
     clear() {
-        this.activeHazards.forEach(h => h.destroy());
+        // Animate out all hazards before destroying
+        this.activeHazards.forEach(h => {
+            // Stop any existing tweens
+            this.scene.tweens.killTweensOf(h);
+            
+            // Quick fade out animation
+            this.scene.tweens.add({
+                targets: h,
+                scale: 0,
+                alpha: 0,
+                duration: 100,
+                ease: 'Power2.easeIn',
+                onComplete: () => {
+                    h.destroy();
+                }
+            });
+        });
         this.activeHazards = [];
         this.hazardSpawnCount = 0;
         this.sideAlternator = false;
