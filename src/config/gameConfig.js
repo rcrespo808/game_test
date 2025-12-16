@@ -28,13 +28,13 @@ export const DIFFICULTY_CONFIGS = {
         name: 'Normal',
         description: 'Balanced challenge level',
         params: {
-            hazardSpeed: 420,
-            density: 0.4,
+            hazardSpeed: 400,
+            density: 0.3,
             lookaheadSec: 0.1,
             maxEventsPerSec: 17,
             laneJitter: 18,
-            gridRows: 3,
-            gridCols: 3
+            gridRows: 4,
+            gridCols: 4
         }
     },
     hard: {
@@ -42,12 +42,12 @@ export const DIFFICULTY_CONFIGS = {
         description: 'Fast-paced, challenging gameplay',
         params: {
             hazardSpeed: 550,
-            density: 0.7,
+            density: 0.6,
             lookaheadSec: 0.08,
             maxEventsPerSec: 25,
             laneJitter: 25,
-            gridRows: 4,
-            gridCols: 4
+            gridRows: 5,
+            gridCols: 5
         }
     },
     extreme: {
