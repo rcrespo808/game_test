@@ -69,6 +69,12 @@ const mockPhaser = {
           alpha: 1,
           isHazard: false,
           targetScale: 1,
+          anims: {
+            isPlaying: false,
+            currentAnim: {
+              key: null
+            }
+          },
           destroy: jest.fn()
         })),
         line: jest.fn(() => ({

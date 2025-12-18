@@ -123,7 +123,7 @@ export class PlayerManager {
         this.player.setPosition(pos.x, pos.y);
         
         // Ensure animation continues playing after reset
-        if (!this.player.anims.isPlaying || this.player.anims.currentAnim.key !== 'player_anim') {
+        if (this.player.anims && (!this.player.anims.isPlaying || (this.player.anims.currentAnim && this.player.anims.currentAnim.key !== 'player_anim'))) {
             this.player.play('player_anim');
         }
     }
